@@ -5,8 +5,6 @@ import com.ang.Moves.Move;
 import com.ang.Moves.MoveList;
 import com.ang.Util.BoardRecord;
 
-// TODO: fix en passant not working
-
 public class Board {
     // public
     public static boolean tryMove(BoardRecord rec, Move move) {
@@ -100,16 +98,55 @@ public class Board {
         }
     }
 
+    private static void resolveFlags(BoardRecord rec, Move move, int piece) {
+        int col = piece & 0b11000;
+        switch (move.flag) {
+            case Flag.DOUBLE_PUSH:
+                rec.epPawnPos = move.to;
+                break;
+            case Flag.EN_PASSANT:
+                rec.board[rec.epPawnPos] = Piece.NONE.val();
+                rec.posArrRemove(Piece.PAWN.val(), rec.epPawnPos);
+                rec.epPawnPos = -1; 
+                break;
+            case Flag.CASTLE_SHORT:
+                int shortRook = move.from + 3;
+                rec.board[shortRook] = Piece.NONE.val();
+                rec.board[shortRook - 2] = Piece.ROOK.val() | col;
+                rec.posArrReplace(Piece.ROOK.val(), Piece.NONE.val(), shortRook, shortRook - 2);
+                rec.epPawnPos = -1; 
+                break;
+            case Flag.CASTLE_LONG:
+                int longRook = move.from + -4;
+                rec.board[longRook] = Piece.NONE.val();
+                rec.board[longRook + 3] = Piece.ROOK.val() | col;
+                rec.posArrReplace(Piece.ROOK.val(), Piece.NONE.val(), longRook, longRook + 3);
+                rec.epPawnPos = -1; 
+                break;
+            case Flag.PROMOTE:
+                rec.board[move.to] = Piece.QUEEN.val() | col;
+                rec.posArrRemove(piece, move.to);
+                rec.posArrAdd(Piece.QUEEN.val(), move.to);
+                rec.attacksArrRemove(col, move.to);
+                rec.epPawnPos = -1; 
+                break;
+            default:
+                rec.epPawnPos = -1; 
+                break;
+            }
+    }
+
     private static void doMove(BoardRecord rec, Move move, MoveList legalMoves) {        
-        // get sliding piece attacks before move
-        MoveList[] preBlackAttacks = new MoveList[13]; // promotions add more
-        MoveList[] preWhiteAttacks = new MoveList[13]; // promotions add more
+        // get sliding piece attacks before move (up to 13 from promotions)
+        MoveList[] preBlackAttacks = new MoveList[13];
+        MoveList[] preWhiteAttacks = new MoveList[13];
         int preBlackEnd = 0;
         int preWhiteEnd = 0;
         for (int pos : rec.allPieces) {
             if (pos == -1) {
                 break;
             }
+            // calculate attacks for sliding pieces before move
             if (isSlidingPiece(rec, pos)) {
                 if ((rec.board[pos] & 0b11000) == Piece.WHITE.val()) {
                     preWhiteAttacks[preWhiteEnd++] = pieceMoves(rec, pos);
@@ -119,8 +156,7 @@ public class Board {
             }
         }
 
-        // removing attacks of taken piece if not automatically recalculated in
-        // sliding moves recalculation
+        // recalculate attacks of taken piece, if sliding then already done
         if (!isSlidingPiece(rec, move.to)) {
             MoveList ml = pieceMoves(rec, move.to);
             for (int i = 0; i < ml.length(); i++) {
@@ -141,40 +177,7 @@ public class Board {
 
         rec.posArrReplace(moving & 0b111, taken & 0b111, move.from, move.to);
 
-        switch (move.flag) {
-        case Flag.DOUBLE_PUSH:
-            rec.epPawnPos = move.to;
-            break;
-        case Flag.EN_PASSANT:
-            rec.board[rec.epPawnPos] = Piece.NONE.val();
-            rec.posArrRemove(Piece.PAWN.val(), rec.epPawnPos);
-            rec.epPawnPos = -1; 
-            break;
-        case Flag.CASTLE_SHORT:
-            int shortRook = move.from + 3;
-            rec.board[shortRook] = Piece.NONE.val();
-            rec.board[shortRook - 2] = Piece.ROOK.val() | col;
-            rec.posArrReplace(Piece.ROOK.val(), Piece.NONE.val(), shortRook, shortRook - 2);
-            rec.epPawnPos = -1; 
-            break;
-        case Flag.CASTLE_LONG:
-            int longRook = move.from + -4;
-            rec.board[longRook] = Piece.NONE.val();
-            rec.board[longRook + 3] = Piece.ROOK.val() | col;
-            rec.posArrReplace(Piece.ROOK.val(), Piece.NONE.val(), longRook, longRook + 3);
-            rec.epPawnPos = -1; 
-            break;
-        case Flag.PROMOTE:
-            rec.board[move.to] = Piece.QUEEN.val() | col;
-            rec.posArrRemove(moving, move.to);
-            rec.posArrAdd(Piece.QUEEN.val(), move.to);
-            rec.attacksArrRemove(col, move.to); // removing attacks when replaced as not auto cleaned
-            rec.epPawnPos = -1; 
-            break;
-        default:
-            rec.epPawnPos = -1; 
-            break;
-        }
+        resolveFlags(rec, move, moving);
 
         // get sliding piece attacks before move
         MoveList[] postBlackAttacks = new MoveList[13]; // promotions add more
@@ -194,6 +197,7 @@ public class Board {
             }
         }
 
+        // remove all sliding piece attacks from before move
         for (MoveList ml : preWhiteAttacks) {
             if (ml == null) {
                 break;
@@ -211,7 +215,7 @@ public class Board {
             }
         }
 
-        // re-add
+        // re-add all sliding piece attacks after move
         for (MoveList ml : postWhiteAttacks) {
             if (ml == null) {
                 break;
@@ -229,16 +233,19 @@ public class Board {
             }
         }
 
+        // recalculate moving piece attacks, if it is sliding it's already done
         if (isSlidingPiece(rec, move.to)) {
             return;
         }
 
+        // removing all attacks from before move
         for (int i = 0; i < legalMoves.length(); i++) {
             if (legalMoves.at(i).attack) {
                 rec.attacksArrRemove(col, legalMoves.at(i).to);
             }
         }
 
+        // calculate and add new attacks after move
         MoveList newMoves = pieceMoves(rec, move.to);
         for (int i = 0; i < newMoves.length(); i++) {
 
@@ -350,8 +357,7 @@ public class Board {
                     moves.add(new Move(from, from + off)); 
                 }
             } else if (rec.board[from + off] == Piece.NONE.val()) {
-                if (rec.epPawnPos == from -1) {
-                    // en passant
+                if (rec.epPawnPos == from + (off - (-8 * dir))) {
                     moves.add(new Move(from, from + off, Flag.EN_PASSANT)); 
                 } else {
                     moves.add(new Move(from, from + off, Flag.ONLY_ATTACK));
@@ -360,25 +366,6 @@ public class Board {
                 moves.add(new Move(from, from + off, Flag.ONLY_ATTACK));
             }
         }
-        
-        // offset = (-8 * dir) + 1;
-        // if (inBounds(from, offset)) {
-        //     if ((rec.board[from + offset] & 0b11000) == opCol) { 
-        //         // take right
-        //         if ((from + offset < 8) || (from + offset > 55)) {
-        //             moves.add(new Move(from, from + offset, Flag.PROMOTE));
-        //         } else {
-        //             moves.add(new Move(from, from + offset)); 
-        //         }
-        //     } else {
-        //         if (rec.epPawnPos == from + 1) {
-        //             // en passant right
-        //             moves.add(new Move(from, from + offset, Flag.EN_PASSANT)); 
-        //         }
-        //     }
-        // }
-        
-
         return moves;
     }
 

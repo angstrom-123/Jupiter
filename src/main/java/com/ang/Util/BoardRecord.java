@@ -219,7 +219,6 @@ public class BoardRecord {
     public void posArrReplace(int moving, int taken, int from, int to) {
         posArrRemove(moving, from);
         posArrAdd(moving, to);
-        
         posArrRemove(taken, to);
     }
     
@@ -350,6 +349,9 @@ public class BoardRecord {
             System.out.print(blackAttacks[i]);
         }
         System.out.println();
+
+        System.out.println();
+        System.out.println("ep pawn "+epPawnPos);
 
     }
 }
