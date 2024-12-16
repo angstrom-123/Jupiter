@@ -18,6 +18,8 @@ public class Engine {
     private int engineCol;
     private int playerCol;
 
+    private boolean endSearch;
+
     public Engine(int searchTime, int col) {
         this.timeLimit = searchTime;
         this.engineCol = col;
@@ -32,17 +34,21 @@ public class Engine {
         Move lastDepthBest = Move.invalid();
         int maxDepth = 1;
 
-        boolean doStop = false;
+        endSearch = false;
         long endTime = System.currentTimeMillis() + timeLimit;
         while (true) {
             Move bestMove = Move.invalid();
             double bestEval = -Global.INFINITY;
     
+            // TODO: allow the engine to play as either colour
             MoveList possibleMoves = Board.allMoves(rec, engineCol);
             for (int i = 0; i < possibleMoves.length() - 1; i++) {
                 if (System.currentTimeMillis() >= endTime) {
-                    doStop = true;
-                    break;
+                    System.out.println("maximum search depth: "+maxDepth);
+                    System.out.println("final move - from: "+lastDepthBest.from+" to: "+lastDepthBest.to);
+                    
+                    endSearch = true;
+                    return lastDepthBest;
                 }
                 if (possibleMoves.at(i).flag == Flag.ONLY_ATTACK) {
                     continue;
@@ -57,14 +63,10 @@ public class Engine {
     
                     if (eval > bestEval) {
                         bestEval = eval;
-                        System.out.println("depth: "+maxDepth+" eval: "+eval+" from: "+tempMove.from+" to: "+tempMove.to);
                         bestMove = tempMove;
+                        System.out.println("depth: "+maxDepth+" eval: "+eval+" from: "+tempMove.from+" to: "+tempMove.to);
                     }
                 }
-            }
-
-            if (doStop) {
-                break;
             }
 
             maxDepth++;
@@ -76,10 +78,6 @@ public class Engine {
                 lastDepthBest = bestMove;
             }
         }
-
-        System.out.println("maximum search depth: "+maxDepth);
-        System.out.println("final move - from: "+lastDepthBest.from+" to: "+lastDepthBest.to);
-        return lastDepthBest;
     }
 
     public double alphaBeta(BoardRecord rec, int moveCol,
@@ -91,9 +89,15 @@ public class Engine {
         }
 
         MoveList possibleMoves = Board.allMoves(rec, moveCol);
-        if (moveCol == Piece.WHITE.val()) { // max
+        if (moveCol == Piece.WHITE.val()) {
+            if (endSearch) {
+                return -Global.INFINITY;
+            }
             double max = -Global.INFINITY;
             for (int i = 0; i < possibleMoves.length() - 1; i++) {
+                if (endSearch) {
+                    return -Global.INFINITY;
+                }
                 BoardRecord tempRec = rec.copy();
                 Move tempMove = possibleMoves.at(i);
                 if (Board.tryMove(tempRec, tempMove)) {
@@ -108,8 +112,14 @@ public class Engine {
             }
             return max;
         } else {
+            if (endSearch) {
+                return Global.INFINITY;
+            }
             double min = Global.INFINITY;
             for (int i = 0; i < possibleMoves.length() - 1; i++) {
+                if (endSearch) {
+                    return Global.INFINITY;
+                }
                 BoardRecord tempRec = rec.copy();
                 Move tempMove = possibleMoves.at(i);
                 if (Board.tryMove(tempRec, tempMove)) {
