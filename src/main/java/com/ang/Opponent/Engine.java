@@ -7,7 +7,6 @@ import com.ang.Moves.*;
 import com.ang.Util.BoardRecord;
 
 // TODO : optimization:
-//      - Increase search depth when there are fewer pieces on the board
 //      - iterative deepening
 //      - history heuristic
 //      - killer moves
@@ -16,15 +15,13 @@ import com.ang.Util.BoardRecord;
 
 public class Engine {  
     private int timeLimit;
-    private int col;
-    private int opCol;
+    private int engineCol;
+    private int playerCol;
 
     public Engine(int searchTime, int col) {
         this.timeLimit = searchTime;
-        this.col = col;
-        this.opCol = (col == Piece.WHITE.val()) 
-        ? Piece.BLACK.val() 
-        : Piece.WHITE.val();
+        this.engineCol = col;
+        this.playerCol = Piece.WHITE.val();
     }
 
     public Engine(int searchTime, Piece col) {
@@ -39,61 +36,29 @@ public class Engine {
         long endTime = System.currentTimeMillis() + timeLimit;
         while (true) {
             Move bestMove = Move.invalid();
+            double bestEval = -Global.INFINITY;
     
-            double bestEval = -Global.infinity;
-    
-            // MoveList possibleMoves = rec.possibleMoves(moveCol);
-    
-            // for (int i = 0; i < possibleMoves.length() - 1; i++) {
-            //     if (System.currentTimeMillis() >= endTime) {
-            //         doStop = true;
-            //         break;
-            //     }
-
-            //     BoardRecord tempRec = rec.copy();
-            //     Move tempMove = possibleMoves.at(i);
-                
-            //     if (tempRec.tryMove(tempMove)) {
-            //         double eval = -alphaBeta(tempRec, PieceColour.opposite(moveCol),
-            //                 -Global.infinity, Global.infinity, maxDepth);
-    
-            //         if (eval > bestEval) {
-            //             bestEval = eval;
-            //             bestMove = tempMove;
-            //         }
-            //     }
-            // }
-
-
-            // for (int pos : rec.allPieces) {
-            //     if (pos == -1) {
-            //         break;
-            //     }
-            //     if ((rec.board[pos] & 0b11000) != col) {
-            //         continue;
-            //     }
-            MoveList moves = Board.allMoves(rec, col);
-                
-            for (int i = 0; i < moves.length(); i++) {
+            MoveList possibleMoves = Board.allMoves(rec, engineCol);
+            for (int i = 0; i < possibleMoves.length() - 1; i++) {
                 if (System.currentTimeMillis() >= endTime) {
                     doStop = true;
                     break;
                 }
-    
-                Move m = moves.at(i);
-                if (m.flag == Flag.ONLY_ATTACK) {
+                if (possibleMoves.at(i).flag == Flag.ONLY_ATTACK) {
                     continue;
                 }
 
                 BoardRecord tempRec = rec.copy();
-                if (Board.tryMove(tempRec, m)) {
-                    double eval = -alphaBeta(tempRec, opCol,
-                        -Global.infinity, Global.infinity, maxDepth);
-
+                Move tempMove = possibleMoves.at(i);
+                
+                if (Board.tryMove(tempRec, tempMove)) {
+                    double eval = -alphaBeta(tempRec, playerCol,
+                            -Global.INFINITY, Global.INFINITY, maxDepth);
+    
                     if (eval > bestEval) {
                         bestEval = eval;
-                        System.out.println("depth: "+maxDepth+" eval: "+eval+" from: "+m.from+" to: "+m.to);
-                        bestMove = m;
+                        System.out.println("depth: "+maxDepth+" eval: "+eval+" from: "+tempMove.from+" to: "+tempMove.to);
+                        bestMove = tempMove;
                     }
                 }
             }
@@ -117,55 +82,43 @@ public class Engine {
         return lastDepthBest;
     }
 
-    public double alphaBeta(BoardRecord rec, int moveCol, 
+    public double alphaBeta(BoardRecord rec, int moveCol,
             double alpha, double beta, int depth) {
         
         if (depth == 0) {
-            double eval = evaluate(rec);
+            double eval = evaluate(rec); // TODO : quiescence search here
             return eval;
         }
 
-        MoveList moves = Board.allMoves(rec, moveCol);
-        // System.out.println(moves.length());
-        if (moveCol == Piece.WHITE.val()) {
-            double max = -Global.infinity;
-            for (int i = 0; i < moves.length(); i++) {
-                Move m = moves.at(i);
-                if (m.flag == Flag.ONLY_ATTACK) {
-                    continue;
-                }
-
+        MoveList possibleMoves = Board.allMoves(rec, moveCol);
+        if (moveCol == Piece.WHITE.val()) { // max
+            double max = -Global.INFINITY;
+            for (int i = 0; i < possibleMoves.length() - 1; i++) {
                 BoardRecord tempRec = rec.copy();
-
-                if (Board.tryMove(tempRec, m)) {
+                Move tempMove = possibleMoves.at(i);
+                if (Board.tryMove(tempRec, tempMove)) {
                     double eval = alphaBeta(tempRec, Piece.BLACK.val(),
                             alpha, beta, depth - 1);
                     max = Math.max(eval, max);
                     alpha = Math.max(alpha, max);
                     if (max >= beta) {
-                        break;
+                        return eval;
                     }
                 }
             }
             return max;
         } else {
-            double min = Global.infinity;
-
-            for (int i = 0; i < moves.length(); i++) {
-                Move m = moves.at(i);
-                if (m.flag == Flag.ONLY_ATTACK) {
-                    continue;
-                }
-
+            double min = Global.INFINITY;
+            for (int i = 0; i < possibleMoves.length() - 1; i++) {
                 BoardRecord tempRec = rec.copy();
-
-                if (Board.tryMove(tempRec, m)) {
+                Move tempMove = possibleMoves.at(i);
+                if (Board.tryMove(tempRec, tempMove)) {
                     double eval = alphaBeta(tempRec, Piece.WHITE.val(),
                             alpha, beta, depth - 1);
                     min = Math.min(eval, min);
                     beta = Math.min(beta, min);
                     if (min <= alpha) {
-                        break;
+                        return eval;
                     }
                 }
             }
@@ -214,7 +167,6 @@ public class Engine {
 
     private double evaluate(BoardRecord rec) {
         double eval = 0.0;
-
         for (int pos : rec.allPieces) {
             if (pos == -1) {
                 break;

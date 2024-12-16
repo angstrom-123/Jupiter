@@ -70,15 +70,15 @@ public class Game implements GameInterface {
                 ? Piece.BLACK.val() 
                 : Piece.WHITE.val();
 
-                mainRec.showPositions();
-                // Move engineMove = engine.generateMove(mainRec);
-                // if (Board.tryMove(mainRec, engineMove)) {
-                //     colToMove = colToMove == Piece.WHITE.val() 
-                //     ? Piece.BLACK.val() 
-                //     : Piece.WHITE.val();
-                // } else {
-                //     System.err.println("Engine could not make a valid move");
-                // }
+                // mainRec.showPositions();
+                Move engineMove = engine.generateMove(mainRec);
+                if (Board.tryMove(mainRec, engineMove)) {
+                    colToMove = colToMove == Piece.WHITE.val() 
+                    ? Piece.BLACK.val() 
+                    : Piece.WHITE.val();
+                } else {
+                    System.err.println("Engine could not make a valid move");
+                }
 
                 renderer.drawBoard();
                 renderer.drawAllSprites(mainRec);
