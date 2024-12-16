@@ -70,7 +70,7 @@ public class Game implements GameInterface {
                 ? Piece.BLACK.val() 
                 : Piece.WHITE.val();
 
-                // mainRec.showPositions();
+                mainRec.showPositions();
                 Move engineMove = engine.generateMove(mainRec);
                 if (Board.tryMove(mainRec, engineMove)) {
                     colToMove = colToMove == Piece.WHITE.val() 
@@ -79,7 +79,7 @@ public class Game implements GameInterface {
                 } else {
                     System.err.println("Engine could not make a valid move");
                 }
-
+                mainRec.showPositions();
                 renderer.drawBoard();
                 renderer.drawAllSprites(mainRec);
             }

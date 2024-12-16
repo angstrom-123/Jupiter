@@ -399,6 +399,31 @@ public class Board {
         return slidingPieceMoves(rec, from, true, true);
     }
 
+    // TODO : bugfix
+    // engine king can castle even after the rook moves away.
+    // to do this he creates a new (3rd) rook for himself, is this rook causing
+    // the OOB error in the BoardRecord too?
+    // Perhaps the engine sees that a castle is legal with the right-side rook
+    // and then executes a castle to the left?
+
+    // Before :
+    //        kbnr
+    //     r   ppp
+    //    p
+    
+    //      p p
+    //      p  p
+    //    pp n p p
+    //    r  k  r
+    // After :
+    //  kr bnr
+    //     ppp
+    // p
+
+    //  p p
+    //  p  p
+    // pp n p p
+    // r  k  r
     private static MoveList kingMoves(BoardRecord rec, int from) {
         MoveList moves = new MoveList(8);
         int col = rec.board[from] & 0b11000;

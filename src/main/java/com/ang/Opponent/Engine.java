@@ -12,6 +12,9 @@ import com.ang.Util.BoardRecord;
 //      - quiescent search
 //      - pawn position evaluation
 
+// TODO : fixes
+//      - bot doesn't find mate well in endgames, usually stalemate
+
 public class Engine {  
     private int timeLimit;
     private int engineCol;
@@ -78,8 +81,8 @@ public class Engine {
     private double alphaBetaNega(BoardRecord rec, double alpha, double beta, 
             int col, int depth) {
         if (depth == 0) {
-            // TODO : do quiescence search here
-            return (col == Piece.WHITE.val()) ? evaluate(rec) : -evaluate(rec);
+            return quiesce(rec, alpha, beta, col);
+            // return (col == Piece.WHITE.val()) ? evaluate(rec) : -evaluate(rec);
         }
 
         int opCol = col == Piece.WHITE.val()
@@ -109,6 +112,52 @@ public class Engine {
             }
         }
         return bestEval;
+    }
+
+    private double quiesce(BoardRecord rec, double alpha, double beta, int col) {
+        double standPat = (col == Piece.WHITE.val()) 
+        ? evaluate(rec) 
+        : -evaluate(rec);
+
+        if (standPat > beta) { 
+            return beta;
+        }
+        if (alpha < standPat) {
+            alpha = standPat;
+        }
+
+        int opCol = col == Piece.WHITE.val()
+        ? Piece.BLACK.val()
+        : Piece.WHITE.val();
+        MoveList moves = Board.allMoves(rec, col);
+        for (int i = 0; i < moves.length(); i++) {
+            Move m = moves.at(i);
+            if (m.flag == Flag.ONLY_ATTACK) {
+                continue;
+            }
+            if (rec.board[m.to] == Piece.NONE.val()) { // only consider captures
+                continue;
+            }
+
+            BoardRecord tempRec = rec.copy();
+            if (Board.tryMove(tempRec, m)) {
+                double eval = -quiesce(tempRec, -beta, -alpha, opCol);
+                if (eval >= beta) {
+                    return beta;
+                }
+
+                // do not delta prune in endgame
+                if ((pieceValue(rec, m.to) + 200 > alpha)
+                        && (rec.minorPieceCount() > 3)) {
+                    return alpha;
+                }
+
+                if (eval > alpha) {
+                    alpha = eval;
+                }
+            }
+        }
+        return alpha;
     }
 
     private double pieceValue(BoardRecord rec, int pos) {
