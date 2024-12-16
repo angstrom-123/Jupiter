@@ -7,7 +7,7 @@ public class Main {
     final static double RENDER_SCALE = 1.2;
     
     public static void main(String[] args) {
-        Engine e = new Engine(1000, Piece.BLACK);
+        Engine e = new Engine(2000, Piece.BLACK);
         Game g = new Game(SQUARE_SIZE, RENDER_SCALE);
         g.init(e);
     }
