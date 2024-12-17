@@ -46,43 +46,56 @@ public class Game implements GameInterface {
         int pressed = yCoord * 8 + xCoord;   
         if ((mainRec.board[pressed] & 0b11000) == colToMove) {
             selected = pressed;
-            legalMoves = Board.pieceMoves(mainRec, selected);   
             renderer.drawBoard();
             renderer.highlightSquare(xCoord, yCoord);
             renderer.drawAllSprites(mainRec);
-            for (int i = 0; i < legalMoves.length(); i++) {
-                if (legalMoves.at(i).flag == Flag.ONLY_ATTACK) {
-                    continue;
-                }
-                if (!Board.tryMove(mainRec.copy(), legalMoves.at(i))) {
-                    continue;
-                }
-                int markX = legalMoves.at(i).to % 8;
-                int markY = (int) Math.floor(legalMoves.at(i).to / 8);
-                renderer.drawMarker(markX, markY);
-            }
+            showMoves(xCoord, yCoord);
         } else if (selected > -1) {
             Move playerMove = findMove(new Move(selected, pressed), legalMoves);
-            boolean moved = Board.tryMove(mainRec, playerMove);
-            if (moved) {
-                selected = -1;
-                colToMove = colToMove == Piece.WHITE.val() 
+            if (!Board.tryMove(mainRec, playerMove)) {
+                System.err.println("Player did not make a valid move");
+                return;
+            }
+
+            renderer.drawBoard();
+            renderer.drawAllSprites(mainRec);
+
+            selected = -1;
+            colToMove = colToMove == Piece.WHITE.val() 
+            ? Piece.BLACK.val() 
+            : Piece.WHITE.val();
+
+            mainRec.showPositions(); // debug
+
+            Move engineMove = engine.generateMove(mainRec);
+            if (!Board.tryMove(mainRec, engineMove)) {
+                System.err.println("Engine could not make a valid move");
+                return;  
+            }
+
+            renderer.drawBoard();
+            renderer.drawAllSprites(mainRec);
+
+            colToMove = colToMove == Piece.WHITE.val() 
                 ? Piece.BLACK.val() 
                 : Piece.WHITE.val();
 
-                mainRec.showPositions();
-                Move engineMove = engine.generateMove(mainRec);
-                if (Board.tryMove(mainRec, engineMove)) {
-                    colToMove = colToMove == Piece.WHITE.val() 
-                    ? Piece.BLACK.val() 
-                    : Piece.WHITE.val();
-                } else {
-                    System.err.println("Engine could not make a valid move");
-                }
-                mainRec.showPositions();
-                renderer.drawBoard();
-                renderer.drawAllSprites(mainRec);
+            mainRec.showPositions(); // debug
+        }
+    }
+
+    private void showMoves(int x, int y) {
+        legalMoves = Board.pieceMoves(mainRec, selected);   
+        for (int i = 0; i < legalMoves.length(); i++) {
+            if (legalMoves.at(i).flag == Flag.ONLY_ATTACK) {
+                continue;
             }
+            if (!Board.tryMove(mainRec.copy(), legalMoves.at(i))) {
+                continue;
+            }
+            int markX = legalMoves.at(i).to % 8;
+            int markY = (int) Math.floor(legalMoves.at(i).to / 8);
+            renderer.drawMarker(markX, markY);
         }
     }
 

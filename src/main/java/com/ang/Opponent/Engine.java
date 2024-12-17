@@ -6,11 +6,17 @@ import com.ang.Piece;
 import com.ang.Moves.*;
 import com.ang.Util.BoardRecord;
 
+// TODO : benchmark move gen with / without "optimizations"
+
+// TODO : compare move gen results to StockFish in random positions
+//      - need to allow engine to play as white and black
+//      - check that arbitrary board states are loaded and usable correctly
+
 // TODO : optimization:
 //      - history heuristic
 //      - killer moves
-//      - quiescent search
 //      - pawn position evaluation
+//      - futility pruning
 
 // TODO : fixes
 //      - bot doesn't find mate well in endgames, usually stalemate
