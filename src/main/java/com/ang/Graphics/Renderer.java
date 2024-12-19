@@ -43,7 +43,6 @@ public class Renderer extends JFrame {
         size = squareSize * 8;
         Dimension paneDimension = new Dimension((int) Math.round(size * scale),
                 (int) Math.round(size * scale));
-
         img         = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
         imgPanel    = new ImagePanel(img);
         frame       = new JFrame();
@@ -57,9 +56,7 @@ public class Renderer extends JFrame {
                 frame.dispose();
             }
         });
-
         imgPanel.addMouseListener(new InputHandler(gameInterface));
-
         frame.setFocusable(true);
         frame.requestFocusInWindow();
     }

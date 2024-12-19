@@ -66,18 +66,18 @@ public class Game implements GameInterface {
 
             // mainRec.showPositions(); // debug
 
-            // Move engineMove = engine.generateMove(mainRec);
-            // if (!Board.tryMove(mainRec, engineMove)) {
-            //     System.err.println("Engine could not make a valid move");
-            //     return;  
-            // }
+            Move engineMove = engine.generateMove(mainRec);
+            if (!Board.tryMove(mainRec, engineMove)) {
+                System.err.println("Engine could not make a valid move");
+                return;  
+            }
 
-            // renderer.drawBoard();
-            // renderer.drawAllSprites(mainRec);
+            renderer.drawBoard();
+            renderer.drawAllSprites(mainRec);
 
-            // colToMove = colToMove == Piece.WHITE.val() 
-            //     ? Piece.BLACK.val() 
-            //     : Piece.WHITE.val();
+            colToMove = colToMove == Piece.WHITE.val() 
+                ? Piece.BLACK.val() 
+                : Piece.WHITE.val();
 
             // mainRec.showPositions(); // debug
         }

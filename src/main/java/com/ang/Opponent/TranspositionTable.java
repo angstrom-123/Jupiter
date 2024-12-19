@@ -2,16 +2,17 @@ package com.ang.Opponent;
 
 import com.ang.Global;
 import com.ang.Piece;
-import com.ang.Moves.Move;
 import com.ang.Util.BoardRecord;
 
 import java.util.HashMap;
 
 public class TranspositionTable {
-    private HashMap<Integer, int[]> hashes = new HashMap<Integer, int[]>();
+    public int size = 0;
+
+    private HashMap<Integer, TableEntry> hashes = new HashMap<Integer, TableEntry>();
     private int[] zobristTable;
 
-    public void init() {
+    public TranspositionTable() {
         // 12 pieces * 64 squares + 1 moveCol + 8 ep files + 4 castling rights
         this.zobristTable = new int[781]; 
         for (int i = 0; i < zobristTable.length; i++) {
@@ -31,10 +32,9 @@ public class TranspositionTable {
         // piece positions
         for (int i = 0; i < rec.board.length; i++) {
             int piece = rec.board[i];
-            if (piece == Piece.NONE.val()) {
-                continue;
+            if (piece != Piece.NONE.val()) {
+                h ^= zobristTable[indexOfPiece(piece)];
             }
-            h ^= zobristTable[indexOfPiece(piece)];
         }
 
         // colour to move
@@ -57,15 +57,26 @@ public class TranspositionTable {
         return h;
     }
 
-    public void saveHash(int h, Move bestMove) {
-        hashes.put(h, new int[]{bestMove.from, bestMove.to});
+    // TODO : fix this
+    public void saveHash(TableEntry entry, int hash) {
+        TableEntry oldEntry = searchTable(hash);
+        if (oldEntry == null) {
+            hashes.put(hash, entry);
+            size++;
+        } else {
+            handleCollision(entry, oldEntry, hash);  
+        }     
     }
 
-    public Move searchTable(int h) {
-        int[] fromTo = hashes.getOrDefault(h, new int[]{-1, -1});
-        if ((fromTo[0] == -1) || (fromTo[1] == -1)) {
-            return Move.invalid();
+    public TableEntry searchTable(int hash) {
+        return hashes.getOrDefault(hash, null);
+    }
+
+    public void handleCollision(TableEntry oldEntry, TableEntry newEntry, int hash) {
+        if ((newEntry.nodeType.precedence() > oldEntry.nodeType.precedence())
+                || (newEntry.depth > oldEntry.depth)) {
+            hashes.remove(hash);
+            hashes.put(hash, newEntry);
         }
-        return new Move(fromTo[0], fromTo[1]);
     }
 }

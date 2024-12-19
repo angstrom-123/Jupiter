@@ -7,6 +7,6 @@ public class Global {
         long max = (long) Math.pow(2, 64);
         long min = 0L;
         // TODO : implement a beter prng
-        return (long) Math.random() * (max - min) + min; 
+        return (long) (Math.random() * (max - min) + min); 
     }
 }

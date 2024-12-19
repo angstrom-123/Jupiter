@@ -27,6 +27,21 @@ public class MoveList {
         elements[end++] = m;
     }
 
+    public void sendToFront(Move m) {
+        Move[] newElements = new Move[elements.length];
+        newElements[0] = m;
+        int newElementsEnd = 1;
+        for (Move move : elements) {
+            if (move == null) {
+                break;
+            }
+            if (!move.equals(m)) {
+                newElements[newElementsEnd++] = move;
+            }
+        }
+        elements = newElements;
+    }
+
     public int length() {
         return end;
     }
