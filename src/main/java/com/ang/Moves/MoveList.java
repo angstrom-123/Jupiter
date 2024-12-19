@@ -1,12 +1,12 @@
 package com.ang.Moves;
 
 public class MoveList {
-    private Move[] elements;
-    private int end;
+    private Move[]  elements;
+    private int     end;
 
     public MoveList(int maxElements) {
-        elements = new Move[maxElements];
-        end = 0;
+        elements    = new Move[maxElements];
+        end         = 0;
     }
 
     public void add(MoveList ml) {
@@ -20,7 +20,8 @@ public class MoveList {
 
     public void add(Move m){
         if (end >= elements.length) {
-            System.err.println("Cannot add move to list, maximum reached");
+            System.err.println("Cannot add move " + m.from + " to " + m.to
+                    + " to list, maximum reached");
             return;
         }
         elements[end++] = m;

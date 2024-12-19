@@ -6,16 +6,16 @@ import com.ang.Opponent.Engine;
 import com.ang.Util.BoardRecord;
 
 public class Game implements GameInterface {
-    int squareSize;
-    double renderScale;
+    private int         squareSize;
+    private double      renderScale;
 
-    private int selected;
-    private MoveList legalMoves;
-    private int colToMove;
+    private int         selected;
+    private MoveList    legalMoves;
+    private int         colToMove;
 
-    public BoardRecord mainRec;
-    public Renderer renderer;
-    public Engine engine;
+    public BoardRecord  mainRec;
+    public Renderer     renderer;
+    public Engine       engine;
     
     public Game(int squareSize, double renderScale) {
         this.squareSize = 45;
@@ -23,15 +23,15 @@ public class Game implements GameInterface {
     }
 
     public void init(Engine engine) {
-        this.engine = engine;
+        this.engine     = engine;
 
-        selected = -1;
-        legalMoves = new MoveList(0);
-        colToMove = Piece.WHITE.val();
-
+        selected        = -1;
+        colToMove       = Piece.WHITE.val();
+        // colToMove       = Piece.BLACK.val();
+        legalMoves      = new MoveList(0);
         String startFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-        mainRec = new BoardRecord(startFEN);
-        renderer = new Renderer(squareSize, renderScale, this);
+        mainRec         = new BoardRecord(startFEN);
+        renderer        = new Renderer(squareSize, renderScale, this);
 
         renderer.drawBoard();
         renderer.drawAllSprites(mainRec);
@@ -40,16 +40,15 @@ public class Game implements GameInterface {
     @Override
     public void mouseClick(int x, int y) {
         double actualSquareSize = Math.round(squareSize * renderScale);
-        int xCoord = (int)Math.floor((double)x / actualSquareSize);
-        int yCoord = (int)Math.floor((double)y / actualSquareSize);
-        
-        int pressed = yCoord * 8 + xCoord;   
+        int xCoord = (int) Math.floor((double) x / actualSquareSize);
+        int yCoord = (int) Math.floor((double) y / actualSquareSize);
+        int pressed = yCoord * 8 + xCoord;  
         if ((mainRec.board[pressed] & 0b11000) == colToMove) {
             selected = pressed;
             renderer.drawBoard();
             renderer.highlightSquare(xCoord, yCoord);
             renderer.drawAllSprites(mainRec);
-            showMoves(xCoord, yCoord);
+            legalMoves = showMoves(xCoord, yCoord);
         } else if (selected > -1) {
             Move playerMove = findMove(new Move(selected, pressed), legalMoves);
             if (!Board.tryMove(mainRec, playerMove)) {
@@ -65,38 +64,40 @@ public class Game implements GameInterface {
             ? Piece.BLACK.val() 
             : Piece.WHITE.val();
 
-            mainRec.showPositions(); // debug
+            // mainRec.showPositions(); // debug
 
-            Move engineMove = engine.generateMove(mainRec);
-            if (!Board.tryMove(mainRec, engineMove)) {
-                System.err.println("Engine could not make a valid move");
-                return;  
-            }
+            // Move engineMove = engine.generateMove(mainRec);
+            // if (!Board.tryMove(mainRec, engineMove)) {
+            //     System.err.println("Engine could not make a valid move");
+            //     return;  
+            // }
 
-            renderer.drawBoard();
-            renderer.drawAllSprites(mainRec);
+            // renderer.drawBoard();
+            // renderer.drawAllSprites(mainRec);
 
-            colToMove = colToMove == Piece.WHITE.val() 
-                ? Piece.BLACK.val() 
-                : Piece.WHITE.val();
+            // colToMove = colToMove == Piece.WHITE.val() 
+            //     ? Piece.BLACK.val() 
+            //     : Piece.WHITE.val();
 
-            mainRec.showPositions(); // debug
+            // mainRec.showPositions(); // debug
         }
     }
 
-    private void showMoves(int x, int y) {
-        legalMoves = Board.pieceMoves(mainRec, selected);   
-        for (int i = 0; i < legalMoves.length(); i++) {
-            if (legalMoves.at(i).flag == Flag.ONLY_ATTACK) {
+    private MoveList showMoves(int x, int y) {
+        MoveList moves = Board.pieceMoves(mainRec, selected);   
+        for (int i = 0; i < moves.length(); i++) {
+            if (moves.at(i).flag == Flag.ONLY_ATTACK) {
                 continue;
             }
-            if (!Board.tryMove(mainRec.copy(), legalMoves.at(i))) {
+            BoardRecord tempRec = mainRec.copy();
+            if (!Board.tryMove(tempRec, moves.at(i))) {
                 continue;
             }
-            int markX = legalMoves.at(i).to % 8;
-            int markY = (int) Math.floor(legalMoves.at(i).to / 8);
+            int markX = moves.at(i).to % 8;
+            int markY = (int) Math.floor(moves.at(i).to / 8);
             renderer.drawMarker(markX, markY);
         }
+        return moves;
     }
 
     // need to convert user move to calculated move to get move flags

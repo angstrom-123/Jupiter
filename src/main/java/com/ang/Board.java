@@ -33,7 +33,6 @@ public class Board {
         BoardRecord tempRec = rec.copy();
         doMove(tempRec, move, legal);
 
-        // in check?
         int kingPos = -1;
         for (int pos : tempRec.kings) {
             if (pos == -1) {
@@ -41,9 +40,10 @@ public class Board {
             }
             if ((tempRec.board[pos] & 0b11000) == col) {
                 kingPos = pos;
+                break;
             }
         }
-        if (kingPos == -1) { // king taken in this pos?
+        if (kingPos == -1) { // king is taken in this position
             return false;
         }
         if (isInCheck(tempRec, kingPos)) {
@@ -51,6 +51,7 @@ public class Board {
         }
 
         doMove(rec, move, legal);
+        updateCRights(rec, move, rec.board[move.to]);
 
         return true;
     }
@@ -58,17 +59,17 @@ public class Board {
     public static MoveList pieceMoves(BoardRecord rec, int from) {
         switch (rec.board[from] & 0b111) {
         case 1:
-            return pawnMoves(rec, from);
+            return pawnMoves(   rec, from);
         case 2:
-            return knightMoves(rec, from);
+            return knightMoves( rec, from);
         case 3:
-            return bishopMoves(rec, from);
+            return bishopMoves( rec, from);
         case 4:
-            return rookMoves(rec, from);
+            return rookMoves(   rec, from);
         case 5:
-            return queenMoves(rec, from);
+            return queenMoves(  rec, from);
         case 6:
-            return kingMoves(rec, from);
+            return kingMoves(   rec, from);
         default:
             return new MoveList(0);
         }
@@ -107,20 +108,33 @@ public class Board {
             case Flag.EN_PASSANT:
                 rec.board[rec.epPawnPos] = Piece.NONE.val();
                 rec.posArrRemove(Piece.PAWN.val(), rec.epPawnPos);
+
                 rec.epPawnPos = -1; 
                 break;
             case Flag.CASTLE_SHORT:
-                int shortRook = move.from + 3;
-                rec.board[shortRook] = Piece.NONE.val();
-                rec.board[shortRook - 2] = Piece.ROOK.val() | col;
-                rec.posArrReplace(Piece.ROOK.val(), Piece.NONE.val(), shortRook, shortRook - 2);
-                rec.epPawnPos = -1; 
+                int shortR = move.from + 3;
+                rec.board[shortR]       = Piece.NONE.val();
+                rec.board[shortR - 2]   = Piece.ROOK.val() | col;
+                rec.posArrReplace(Piece.ROOK.val(), Piece.NONE.val(),
+                                  shortR, shortR - 2);
+
+                int shortRightsIndex = (col == Piece.WHITE.val()) ? 0 : 2;
+                rec.cRights[shortRightsIndex] = 0;
+                rec.cRightsLocks[shortRightsIndex] = 1;
+
+                rec.epPawnPos = -1;
                 break;
             case Flag.CASTLE_LONG:
-                int longRook = move.from + -4;
-                rec.board[longRook] = Piece.NONE.val();
-                rec.board[longRook + 3] = Piece.ROOK.val() | col;
-                rec.posArrReplace(Piece.ROOK.val(), Piece.NONE.val(), longRook, longRook + 3);
+                int longR = move.from + -4;
+                rec.board[longR]        = Piece.NONE.val();
+                rec.board[longR + 3]    = Piece.ROOK.val() | col;
+                rec.posArrReplace(Piece.ROOK.val(), Piece.NONE.val(), 
+                                  longR, longR + 3);
+
+                int longRightsIndex = (col == Piece.WHITE.val()) ? 1 : 3;
+                rec.cRights[longRightsIndex] = 0;
+                rec.cRightsLocks[longRightsIndex] = 1;
+
                 rec.epPawnPos = -1; 
                 break;
             case Flag.PROMOTE:
@@ -128,12 +142,162 @@ public class Board {
                 rec.posArrRemove(piece, move.to);
                 rec.posArrAdd(Piece.QUEEN.val(), move.to);
                 rec.attacksArrRemove(col, move.to);
+
                 rec.epPawnPos = -1; 
                 break;
             default:
                 rec.epPawnPos = -1; 
                 break;
             }
+    }
+
+    private static void updateCRights(BoardRecord rec, Move move, int piece) {
+        boolean whiteCanShort   = true;
+        boolean whiteCanLong    = true;
+        boolean blackCanShort   = true;
+        boolean blackCanLong    = true;
+        boolean lockWhiteShort  = false;
+        boolean lockWhiteLong   = false;
+        boolean lockBlackShort  = false;
+        boolean lockBlackLong   = false;
+
+        // kings' castling paths
+        int[]   whiteShortRoute = new int[]{61, 62};
+        int[]   whiteLongRoute  = new int[]{58, 59};
+        int     longEmptyPos    = 57;
+        int     blackOffset     = -56;
+
+        // king moved or in check
+        for (int pos : rec.kings) {
+            if (pos == -1) {
+                continue; // TODO : try with break
+            }
+            if ((rec.board[pos] & 0b11000) == Piece.WHITE.val()) {
+                if (isInCheck(rec, pos)) {
+                    whiteCanShort   = false;
+                    whiteCanLong    = false;
+                } else if (pos != 60) {
+                    whiteCanShort   = false;
+                    whiteCanLong    = false;
+                    lockWhiteShort  = true;
+                    lockWhiteLong   = true;
+                }
+            } else {
+                if (isInCheck(rec, pos)) {
+                    blackCanShort   = false;
+                    blackCanLong    = false;
+                } else if (pos != 4) {
+                    blackCanShort   = false;
+                    blackCanLong    = false;
+                    lockBlackShort  = true;
+                    lockBlackLong   = true;
+                }
+            }
+        }
+
+        // black king's rook moved
+        if ((rec.board[7]) != (Piece.ROOK.val() | Piece.BLACK.val())) {
+            blackCanShort   = false;
+            lockBlackShort  = true;
+        }
+        // black queen's rook moved
+        if ((rec.board[0]) != (Piece.ROOK.val() | Piece.BLACK.val())) {
+            blackCanLong    = false;
+            lockBlackLong   = true;
+        }
+        // white king's rook moved
+        if ((rec.board[63]) != (Piece.ROOK.val() | Piece.WHITE.val())) {
+            whiteCanShort   = false;
+            lockWhiteShort  = true;
+        }
+        // white queen's rook moved
+        if ((rec.board[56]) != (Piece.ROOK.val() | Piece.WHITE.val())) {
+            whiteCanLong    = false;
+            lockWhiteLong   = true;
+        }
+
+        // white short path blocked or checked
+        for (int pos : whiteShortRoute) {
+            if (rec.board[pos] != Piece.NONE.val()) {
+                whiteCanShort = false;
+                break;
+            } else if (isUnderAttack(rec, pos, Piece.WHITE.val())) {
+                whiteCanShort = false;
+                break;
+            }
+        }
+        // white long path blocked or checked
+        if (rec.board[longEmptyPos] != Piece.NONE.val()) {
+            whiteCanLong = false;
+        } else {
+            for (int pos : whiteLongRoute) {
+                if (rec.board[pos] != Piece.NONE.val()) {
+                    whiteCanLong = false;
+                    break;
+                } else if (isUnderAttack(rec, pos, Piece.WHITE.val())) {
+                    whiteCanLong = false;
+                    break;
+                }
+            }
+        }
+        // black short path blocked or checked
+        for (int pos : whiteShortRoute) {
+            if (rec.board[pos + blackOffset] != Piece.NONE.val()) {
+                blackCanShort = false;
+                break;
+            } else if (isUnderAttack(rec, pos + blackOffset, 
+                    Piece.BLACK.val())) {
+                blackCanShort = false;
+                break;
+            }
+        }
+        // black long path blocked or checked
+        if (rec.board[longEmptyPos + blackOffset] != Piece.NONE.val()) {
+            blackCanLong = false;
+        } else {
+            for (int pos : whiteLongRoute) {
+                if (rec.board[pos + blackOffset] != Piece.NONE.val()) {
+                    blackCanLong = false;
+                    break;
+                } else if (isUnderAttack(rec, pos + blackOffset, 
+                        Piece.BLACK.val())) {
+                    blackCanLong = false;
+                    break;
+                }
+            }
+        }
+
+        // update castling rights locks
+        if (lockWhiteShort) {
+            rec.cRightsLocks[0] = 1; 
+            rec.cRights[0]      = 0;
+        }
+        if (lockWhiteLong) {
+            rec.cRightsLocks[1] = 1;
+            rec.cRights[1]      = 0; 
+        }
+        if (lockBlackShort) {
+            rec.cRightsLocks[2] = 1; 
+            rec.cRights[2]      = 0;
+        }
+        if (lockBlackLong) {
+            rec.cRightsLocks[3] = 1; 
+            rec.cRights[3]      = 0;
+        }
+
+        // update castling rights if unlocked
+        if (rec.cRightsLocks[0] == 0) {
+            rec.cRights[0] = (whiteCanShort) ? 1 : 0;
+        }
+        if (rec.cRightsLocks[1] == 0) {
+            rec.cRights[1] = (whiteCanLong) ? 1 : 0;
+        }
+        if (rec.cRightsLocks[2] == 0) {
+            rec.cRights[2] = (blackCanShort) ? 1 : 0;
+        }
+        if (rec.cRightsLocks[3] == 0) {
+            rec.cRights[3] = (blackCanLong) ? 1 : 0;
+        }
     }
 
     private static void doMove(BoardRecord rec, Move move, MoveList legalMoves) {        
@@ -161,27 +325,28 @@ public class Board {
             MoveList ml = pieceMoves(rec, move.to);
             for (int i = 0; i < ml.length(); i++) {
                 if (ml.at(i).attack) {
-                    rec.attacksArrRemove(rec.board[move.to] & 0b11000, ml.at(i).to);
+                    rec.attacksArrRemove(rec.board[move.to] & 0b11000, 
+                                         ml.at(i).to);
                 }
             }
         } 
         
-        int moving = rec.board[move.from];
-        int taken = rec.board[move.to];
-        int col = moving & 0b11000;
+        int moving  = rec.board[move.from];
+        int taken   = rec.board[move.to];
+        int col     = moving & 0b11000;
 
         rec.board[move.to] = rec.board[move.from];
         rec.board[move.from] = Piece.NONE.val();
-        rec.movedArrRemove(move.from); // does nothing if the piece has not moved yet
+        rec.movedArrRemove(move.from);
         rec.movedArrAdd(move.to);
 
         rec.posArrReplace(moving & 0b111, taken & 0b111, move.from, move.to);
 
         resolveFlags(rec, move, moving);
 
-        // get sliding piece attacks before move
-        MoveList[] postBlackAttacks = new MoveList[13]; // promotions add more
-        MoveList[] postWhiteAttacks = new MoveList[13]; // promotions add more
+        // get sliding piece attacks after move (up to 13 from promotions)
+        MoveList[] postBlackAttacks = new MoveList[13];
+        MoveList[] postWhiteAttacks = new MoveList[13];
         int postBlackEnd = 0;
         int postWhiteEnd = 0;
         for (int pos : rec.allPieces) {
@@ -234,31 +399,32 @@ public class Board {
         }
 
         // recalculate moving piece attacks, if it is sliding it's already done
-        if (isSlidingPiece(rec, move.to)) {
-            return;
-        }
-
-        // removing all attacks from before move
-        for (int i = 0; i < legalMoves.length(); i++) {
-            if (legalMoves.at(i).attack) {
-                rec.attacksArrRemove(col, legalMoves.at(i).to);
+        if (!isSlidingPiece(rec, move.to)) {
+            // removing all attacks from before move
+            for (int i = 0; i < legalMoves.length(); i++) {
+                if (legalMoves.at(i).attack) {
+                    rec.attacksArrRemove(col, legalMoves.at(i).to);
+                }
             }
-        }
 
-        // calculate and add new attacks after move
-        MoveList newMoves = pieceMoves(rec, move.to);
-        for (int i = 0; i < newMoves.length(); i++) {
+            // calculate and add new attacks after move
+            MoveList newMoves = pieceMoves(rec, move.to);
+            for (int i = 0; i < newMoves.length(); i++) {
 
-            if (newMoves.at(i).attack) {
-                rec.attacksArrAdd(col, newMoves.at(i).to); 
-            }
-        } 
+                if (newMoves.at(i).attack) {
+                    rec.attacksArrAdd(col, newMoves.at(i).to); 
+                }
+            } 
+        }        
     }
 
     private static boolean isUnderAttack(BoardRecord rec, int pos, int col) {        
         Piece pieceCol = (col == Piece.WHITE.val()) ? Piece.WHITE : Piece.BLACK;
+        return isUnderAttack(rec, pos, pieceCol);
+    }
+    private static boolean isUnderAttack(BoardRecord rec, int pos, Piece col) {
         int[] attacks;
-        switch (pieceCol) {
+        switch (col) {
             case BLACK:
                 attacks = rec.whiteAttacks;
                 break;
@@ -277,19 +443,6 @@ public class Board {
 
     private static boolean isInCheck(BoardRecord rec, int pos) {
         return isUnderAttack(rec, pos, rec.board[pos] & 0b11000);
-        // return false;
-    }
-
-    private static boolean hasMoved(BoardRecord rec, int pos) {
-        for (int p : rec.movedPieces) {
-            if (p == -1) {
-                return false;
-            }
-            if (p == pos) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private static boolean inBounds(int from, int offset) {
@@ -329,17 +482,19 @@ public class Board {
             // single push
             if (inBounds(from, offset)) { 
                 if ((from + offset < 8) || (from + offset > 55)) {
-                    moves.add(new Move(from, from + offset, Flag.PROMOTE, false));
+                    moves.add(new Move(from, from + offset, 
+                              Flag.PROMOTE, false));
                 } else {
                     moves.add(new Move(from, from + offset, false)); 
                 }
             }
-
-            if (!hasMoved(rec, from)) {
-                offset = -16 * dir;
+            // double push
+            offset = -16 * dir;
+            if (((Math.floor(from / 8) == 1) || (Math.floor(from / 8) == 6))
+                    && (inBounds(from, offset))) {
                 if (rec.board[from + offset] == Piece.NONE.val()) {
-                    // double push
-                    moves.add(new Move(from, from + offset, Flag.DOUBLE_PUSH, false)); 
+                    moves.add(new Move(from, from + offset, 
+                              Flag.DOUBLE_PUSH, false)); 
                 }
             } 
         }
@@ -357,12 +512,14 @@ public class Board {
                     moves.add(new Move(from, from + off)); 
                 }
             } else if (rec.board[from + off] == Piece.NONE.val()) {
+                // en passant
                 if (rec.epPawnPos == from + (off - (-8 * dir))) {
                     moves.add(new Move(from, from + off, Flag.EN_PASSANT)); 
                 } else {
                     moves.add(new Move(from, from + off, Flag.ONLY_ATTACK));
                 }
-            } else { // friendly piece at attack square
+            } else { 
+                // friendly piece at attack square - need to add attack manually
                 moves.add(new Move(from, from + off, Flag.ONLY_ATTACK));
             }
         }
@@ -370,9 +527,9 @@ public class Board {
     }
 
     private static MoveList knightMoves(BoardRecord rec, int from) {
-        MoveList moves = new MoveList(8);
-        int col = rec.board[from] & 0b11000;
-        int[] offsets = new int[]{-17, -15, -10, -6, 6, 10, 15, 17};
+        MoveList moves  = new MoveList(8);
+        int col         = rec.board[from] & 0b11000;
+        int[] offsets   = new int[]{-17, -15, -10, -6, 6, 10, 15, 17};
 
         for (int move : offsets) {
             if (inBounds(from, move)) {
@@ -400,12 +557,12 @@ public class Board {
     }
 
     private static MoveList kingMoves(BoardRecord rec, int from) {
-        MoveList moves = new MoveList(8);
+        MoveList moves = new MoveList(10);
         int col = rec.board[from] & 0b11000;
         int[] offsets = new int[]{-9, -8, -7, -1, 1, 7, 8, 9};
 
         for (int move : offsets) {
-            if (inBounds(from, move)) { 
+            if (inBounds(from, move) && !isUnderAttack(rec, from + move, col)) { 
                 if ((rec.board[from + move] & 0b11000) != col) {
                     moves.add(new Move(from, from + move));
                 } else {
@@ -414,54 +571,18 @@ public class Board {
             }
         }
 
-        if (hasMoved(rec, from)) {
-            return moves;
+        int canShort = (col == Piece.WHITE.val()) 
+        ? rec.cRights[0]
+        : rec.cRights[2];
+        if (canShort == 1) {
+            moves.add(new Move(from, from + 2, Flag.CASTLE_SHORT, false));
         }
 
-        if (isInCheck(rec, from)) {
-            return moves;
-        }  
-
-        // castle short
-        int[] shortOffsets = new int[]{1, 2};
-        boolean canShort = true;
-        for (int offset : shortOffsets) {
-            if (rec.board[from + offset] != Piece.NONE.val()) {
-                canShort = false;
-                break;
-            }
-            if (isUnderAttack(rec, from + offset, col)) {
-                canShort = false;
-                break;
-            }
-        }
-        if (canShort) {
-            int rookPos = (col == Piece.WHITE.val()) ? 63 : 7;
-            if (((rec.board[rookPos] & 0b111) == Piece.ROOK.val()) 
-                    && (!hasMoved(rec, rookPos))) { 
-                moves.add(new Move(from, from + 2, Flag.CASTLE_SHORT, false));
-            }
-        }
-
-        // castle long
-        int[] longOffsets = new int[]{-1, -2, -3};
-        boolean canLong = true;
-        for (int offset : longOffsets) {
-            if (rec.board[from + offset] != Piece.NONE.val()) {
-                canLong = false;
-                break;
-            }
-            if (isUnderAttack(rec, from + offset, col)) {
-                canLong = false;
-                break;
-            }
-        }
-        if (canLong) {
-            int rookPos = (col == Piece.WHITE.val()) ? 56 : 0;
-            if (((rec.board[rookPos] & 0b111) == Piece.ROOK.val())
-                    && (!hasMoved(rec, rookPos))) {
-                moves.add(new Move(from, from - 2, Flag.CASTLE_LONG, false));
-            }
+        int canLong = (col == Piece.WHITE.val()) 
+        ? rec.cRights[1]
+        : rec.cRights[3];
+        if (canLong == 1) {
+            moves.add(new Move(from, from - 2, Flag.CASTLE_LONG, false));
         }
 
         return moves;
@@ -469,19 +590,18 @@ public class Board {
 
     private static MoveList slidingPieceMoves(BoardRecord rec, int from, 
             boolean orthogonal, boolean diagonal) {
-        if ((!orthogonal) && (!diagonal)) { 
+        if (!orthogonal && !diagonal) { 
             System.err.println("Sliding piece must have a direction");
             return new MoveList(0); 
         }
 
-        MoveList moves = new MoveList(27);
+        MoveList moves  = new MoveList(27);
+        int[] offsets   = new int[]{-8, -1, 1, 8, -9, -7, 7, 9};
+        int col         = rec.board[from] & 0b11000;
+        int opCol       = (col == 8)    ? 16 : 8;
+        int start       = (orthogonal)  ?  0 : 4;
+        int end         = (diagonal)    ?  8 : 4;
 
-        int[] offsets = new int[]{-8, -1, 1, 8, -9, -7, 7, 9};
-        int col = rec.board[from] & 0b11000;
-        int opCol = (col == 8) ? 16 : 8;
-
-        int start = (orthogonal) ? 0 : 4;
-        int end = (diagonal) ? 8 : 4;
         for (int i = start; i < end; i++) {
             int step = 1;
             int stepPos = from;
@@ -490,7 +610,8 @@ public class Board {
                     break;
                 }
                 if ((rec.board[stepPos + offsets[i]] & 0b11000) == col) {
-                    moves.add(new Move(from, stepPos + offsets[i], Flag.ONLY_ATTACK));
+                    moves.add(new Move(from, stepPos + offsets[i], 
+                              Flag.ONLY_ATTACK));
                     break;
                 }
                 if ((rec.board[stepPos + offsets[i]] & 0b11000) == opCol) {

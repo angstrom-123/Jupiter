@@ -5,62 +5,64 @@ import com.ang.Piece;
 import com.ang.Moves.MoveList;
 
 public class BoardRecord {
-    public int[] board;
+    public int[]    board;
 
-    public int epPawnPos;
+    public int      epPawnPos;
+    public int[]    cRights;
+    public int[]    cRightsLocks;
 
-    public int[] pawns;
-    public int[] knights;
-    public int[] bishops;
-    public int[] rooks;
-    public int[] queens;
-    public int[] kings;
-    public int[] allPieces;
-    public int[] movedPieces;
-    public int[] whiteAttacks;
-    public int[] blackAttacks;
+    public int[]    pawns;
+    public int[]    knights;
+    public int[]    bishops;
+    public int[]    rooks;
+    public int[]    queens;
+    public int[]    kings;
+    public int[]    allPieces;
+    public int[]    movedPieces;
+    public int[]    whiteAttacks;
+    public int[]    blackAttacks;
 
-    private int pawnsEnd;
-    private int knightsEnd;
-    private int bishopsEnd;
-    private int rooksEnd;
-    private int queensEnd;
-    private int kingsEnd;
-    private int allPiecesEnd;
-    private int movedPiecesEnd;
+    private int     pawnsEnd;
+    private int     knightsEnd;
+    private int     bishopsEnd;
+    private int     rooksEnd;
+    private int     queensEnd;
+    private int     kingsEnd;
+    private int     allPiecesEnd;
+    private int     movedPiecesEnd;
 
     public BoardRecord() {};
 
     public BoardRecord(String FENString) {
-        board = FENReader.readFEN(FENString);
+        board           = FENReader.readFEN(FENString);
         
-        epPawnPos = -1;
+        epPawnPos       = -1;
+        cRights         = new int[4];
+        cRightsLocks    = new int[4];
 
-        pawns = new int[16];
-        knights = new int[4];
-        bishops = new int[4];
-        rooks = new int[4];
-        queens = new int[18]; // pawns can promote
-        kings = new int[2];
-        allPieces = new int[32];
-        movedPieces = new int[32];
-        whiteAttacks = new int[64];
-        blackAttacks = new int[64];
+        pawns           = new int[16];
+        knights         = new int[4];
+        bishops         = new int[4];
+        rooks           = new int[4];
+        queens          = new int[18]; // pawns can promote
+        kings           = new int[2];
+        allPieces       = new int[32];
+        movedPieces     = new int[32];
+        whiteAttacks    = new int[64];
+        blackAttacks    = new int[64];
 
-        pawnsEnd = 0;
-        knightsEnd = 0;
-        bishopsEnd = 0;
-        rooksEnd = 0;
-        queensEnd = 0;
-        kingsEnd = 0;
-        allPiecesEnd = 0;
-        movedPiecesEnd = 0;
+        pawnsEnd        = 0;
+        knightsEnd      = 0;
+        bishopsEnd      = 0;
+        rooksEnd        = 0;
+        queensEnd       = 0;
+        kingsEnd        = 0;
+        allPiecesEnd    = 0;
+        movedPiecesEnd  = 0;
 
+        for (int i = 0; i < queens.length; i++) { queens[i] = -1; }
+       
         for (int i = 0; i < board.length; i++) {
-            if (i < queens.length) {
-                queens[i] = -1;
-            }
-
             int piece = board[i] & 0b00111;
 
             MoveList moves = Board.pieceMoves(this, i);
@@ -71,62 +73,63 @@ public class BoardRecord {
             }
             
             if (piece != Piece.NONE.val()) {
-                allPieces[allPiecesEnd] = i;
-                movedPieces[allPiecesEnd] = - 1;
+                allPieces[allPiecesEnd]     = i;
+                movedPieces[allPiecesEnd]   = -1;
                 allPiecesEnd++; 
             }
+
             switch (piece) {
             case 1:
-                pawns[pawnsEnd++] = i;
+                pawns[pawnsEnd++]       = i;
                 break;
             case 2:
-                knights[knightsEnd++] = i;
+                knights[knightsEnd++]   = i;
                 break;
             case 3:
-                bishops[bishopsEnd++] = i;
+                bishops[bishopsEnd++]   = i;
                 break;
             case 4:
-                rooks[rooksEnd++] = i;
+                rooks[rooksEnd++]       = i;
                 break;
             case 5:
-                queens[queensEnd++] = i;
+                queens[queensEnd++]     = i;
                 break;
             case 6:
-                kings[kingsEnd++] = i;
+                kings[kingsEnd++]       = i;
                 break;
             default:
                 break;
             }
         }
-
-        showPositions();
     }
 
     public BoardRecord copy() {
-        BoardRecord temp = new BoardRecord();
+        BoardRecord temp    = new BoardRecord();
 
-        temp.board = this.board.clone();
+        temp.board          = this.board.clone();
 
-        temp.epPawnPos = this.epPawnPos;
+        temp.epPawnPos      = this.epPawnPos;
+        temp.cRights        = this.cRights.clone();
+        temp.cRightsLocks   = this.cRightsLocks.clone();
 
-        temp.pawns = this.pawns.clone();
-        temp.knights = this.knights.clone();
-        temp.bishops = this.bishops.clone();
-        temp.rooks = this.rooks.clone();
-        temp.queens = this.queens.clone();
-        temp.kings = this.kings.clone();
-        temp.allPieces = this.allPieces.clone();
-        temp.movedPieces = this.movedPieces.clone();
-        temp.whiteAttacks = this.whiteAttacks.clone();
-        temp.blackAttacks = this.blackAttacks.clone();
+        temp.pawns          = this.pawns.clone();
+        temp.knights        = this.knights.clone();
+        temp.bishops        = this.bishops.clone();
+        temp.rooks          = this.rooks.clone();
+        temp.queens         = this.queens.clone();
+        temp.kings          = this.kings.clone();
+        temp.allPieces      = this.allPieces.clone();
+        temp.movedPieces    = this.movedPieces.clone();
+        temp.whiteAttacks   = this.whiteAttacks.clone();
+        temp.blackAttacks   = this.blackAttacks.clone();
 
-        temp.pawnsEnd = this.pawnsEnd;
-        temp.knightsEnd = this.knightsEnd;
-        temp.bishopsEnd = this.bishopsEnd;
-        temp.rooksEnd = this.rooksEnd;
-        temp.queensEnd = this.queensEnd;
-        temp.kingsEnd = this.kingsEnd;
-        temp.allPiecesEnd = this.allPiecesEnd;
+        temp.pawnsEnd       = this.pawnsEnd;
+        temp.knightsEnd     = this.knightsEnd;
+        temp.bishopsEnd     = this.bishopsEnd;
+        temp.rooksEnd       = this.rooksEnd;
+        temp.queensEnd      = this.queensEnd;
+        temp.kingsEnd       = this.kingsEnd;
+        temp.allPiecesEnd   = this.allPiecesEnd;
         temp.movedPiecesEnd = this.movedPiecesEnd;
 
         return temp;
@@ -366,6 +369,5 @@ public class BoardRecord {
 
         System.out.println();
         System.out.println("ep pawn "+epPawnPos);
-
     }
 }

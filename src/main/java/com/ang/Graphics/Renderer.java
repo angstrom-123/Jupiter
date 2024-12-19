@@ -14,25 +14,25 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 
 public class Renderer extends JFrame {
-    final Colour DARK_COL = new Colour(112,102,119);
-    final Colour LIGHT_COL = new Colour(204,183,174);
-    final Colour HIGHLIGHT_COL = new Colour(255,106,60);
+    final Colour            DARK_COL       = new Colour(112, 102, 119);
+    final Colour            LIGHT_COL      = new Colour(204, 183, 174);
+    final Colour            HIGHLIGHT_COL  = new Colour(255, 106,  60);
     
-    private int squareSize;
-    private double scale;
-    private int size;
+    private int             squareSize;
+    private double          scale;
+    private int             size;
 
-    private BufferedImage img;
-    private ImagePanel imgPanel;
-    private JFrame frame;
-    private GameInterface gameInterface;
+    private BufferedImage   img;
+    private ImagePanel      imgPanel;
+    private JFrame          frame;
+    private GameInterface   gameInterface;
 
     private BufferedImage[] sprites;
 
     public Renderer(int squareSize, double scale, GameInterface gameInterface) {
-        this.squareSize = squareSize;
-        this.scale = scale;
-        this.gameInterface = gameInterface;
+        this.squareSize     = squareSize;
+        this.scale          = scale;
+        this.gameInterface  = gameInterface;
 
         init();
         loadSprites();
@@ -41,20 +41,17 @@ public class Renderer extends JFrame {
 
     public void init() {
         size = squareSize * 8;
-        Dimension paneDimension = new Dimension((int)Math.round(size * scale),
-                (int)Math.round(size * scale));
+        Dimension paneDimension = new Dimension((int) Math.round(size * scale),
+                (int) Math.round(size * scale));
 
-        img = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
-        imgPanel = new ImagePanel(img);
-
-        frame = new JFrame();
+        img         = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
+        imgPanel    = new ImagePanel(img);
+        frame       = new JFrame();
         frame.getContentPane().setPreferredSize(paneDimension);
         frame.getContentPane().add(imgPanel);
         frame.pack();
-
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
-
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e){
                 frame.dispose();
@@ -77,24 +74,27 @@ public class Renderer extends JFrame {
             "/RookSprite.png",
             "/QueenSprite.png",
             "/KingSprite.png",
-            "/StarSprite.png"};
-        Colour lightTint = new Colour(255, 255, 255);
-        Colour darkTint = new Colour(0, 0, 0);
+            "/StarSprite.png"
+        };
+        Colour lightTint    = new Colour(255, 255, 255);
+        Colour darkTint     = new Colour(  0,   0,   0);
 
         for (int i = 0; i < paths.length; i++) {
             BufferedImage s = new BufferedImage(squareSize, squareSize,
                     BufferedImage.TYPE_INT_ARGB);
             try {
-                s = ImageIO.read(this.getClass().getResource(paths[i]));
+                s = ImageIO.read(this
+                        .getClass()
+                        .getResource(paths[i]));
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
             if (i == paths.length - 1) {
-                // sprites[end] = s;
-                // return;
                 try {
-                    s = ImageIO.read(this.getClass().getResource("/StarSprite.png"));
+                    s = ImageIO.read(this
+                            .getClass()
+                            .getResource("/StarSprite.png"));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -102,8 +102,8 @@ public class Renderer extends JFrame {
                 return;
             }
 
-            sprites[end] = tint(s, lightTint);
-            sprites[end + 1] = tint(s, darkTint);
+            sprites[end]        = tint(s, lightTint);
+            sprites[end + 1]    = tint(s, darkTint);
             end += 2;
         }
     }
@@ -113,12 +113,11 @@ public class Renderer extends JFrame {
                 BufferedImage.TYPE_INT_ARGB);
         for (int y = 0; y < squareSize; y++) {
             for (int x = 0; x < squareSize; x++) {
-                int samp = s.getRGB(x, y);
-
-                int alpha = (samp >> 24) & 0xff;
-                int r = (samp >> 16) & 0xff;
-                int g = (samp >> 8) & 0xff;
-                int b = (samp >> 0) & 0xff;
+                int samp    = s.getRGB(x, y);
+                int alpha   = (samp >> 24)  & 0xff;
+                int r       = (samp >> 16)  & 0xff;
+                int g       = (samp >>  8)  & 0xff;
+                int b       = (samp >>  0)  & 0xff;
 
                 if ((r == 0) && (g == 0) && (b == 0) && (alpha == 0xff)) {
                     out.setRGB(x, y, samp);
@@ -133,9 +132,9 @@ public class Renderer extends JFrame {
                 int gTinted = (int)Math.round((g + tint.g()) / 2);
                 int bTinted = (int)Math.round((b + tint.b()) / 2);
 
-                int pixelTinted = (alpha << 24) 
-                                | (rTinted << 16) 
-                                | (gTinted << 8) 
+                int pixelTinted = (alpha    << 24) 
+                                | (rTinted  << 16) 
+                                | (gTinted  <<  8) 
                                 | (bTinted);
 
                 out.setRGB(x, y, pixelTinted);
@@ -221,12 +220,11 @@ public class Renderer extends JFrame {
 
         for (int j = 0; j < squareSize; j++) {
             for (int i = 0; i < squareSize; i++) {
-                int samp = s.getRGB(i, j);
-
-                int alpha = (samp >> 24) & 0xff;
-                int r = (samp >> 16) & 0xff;
-                int g = (samp >> 8) & 0xff;
-                int b = (samp) & 0xff;
+                int samp    = s.getRGB(i, j);
+                int alpha   = (samp >> 24)  & 0xff;
+                int r       = (samp >> 16)  & 0xff;
+                int g       = (samp >>  8)  & 0xff;
+                int b       = (samp)        & 0xff;
 
                 if (alpha == 0) {
                     continue;
@@ -241,9 +239,9 @@ public class Renderer extends JFrame {
     }
 
     private void drawPixel(int x, int y, Colour col) {
-        int r = (int)Math.round(col.r());
-        int g = (int)Math.round(col.g());
-        int b = (int)Math.round(col.b());
+        int r = (int) Math.round(col.r());
+        int g = (int) Math.round(col.g());
+        int b = (int) Math.round(col.b());
         int pixelCol = (r << 16) | (g << 8) | (b);
 
         img.setRGB(x, y, pixelCol);

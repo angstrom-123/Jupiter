@@ -6,6 +6,8 @@ import com.ang.Piece;
 import com.ang.Moves.*;
 import com.ang.Util.BoardRecord;
 
+// TODO : fix engine moving pinned pieces to take king
+
 // TODO : benchmark move gen with / without "optimizations"
 
 // TODO : compare move gen results to StockFish in random positions
@@ -21,6 +23,10 @@ import com.ang.Util.BoardRecord;
 // TODO : fixes
 //      - bot doesn't find mate well in endgames, usually stalemate
 
+// TODO : assess requirement for has-moved bits in gamestate (dont need to track?)
+//      - for pawns can just check the rank
+//      - for castling can just calculate and store rights in the gamestate
+//          - revoke rights if either piece moves
 public class Engine {  
     private int timeLimit;
     private int engineCol;
@@ -37,22 +43,26 @@ public class Engine {
     }
 
     public Move generateMove(BoardRecord rec) {
-        Move lastPlyBestMove = Move.invalid();
-        int maxDepth = 1;
-
-        long endTime = System.currentTimeMillis() + timeLimit;
+        Move lastPlyBestMove    = Move.invalid();
+        int maxDepth            = 1;
+        long endTime            = System.currentTimeMillis() + timeLimit;
         while (true) {
-            Move bestMove = Move.invalid();
             double bestEval = -Global.INFINITY;
-            MoveList moves = Board.allMoves(rec, engineCol);
+            Move bestMove   = Move.invalid();         
+
+            MoveList moves  = Board.allMoves(rec, engineCol);
+            moves           = Orderer.orderMoves(moves);
+
             for (int i = 0; i < moves.length(); i++) {
                 if (System.currentTimeMillis() >= endTime) {
                     System.out.println("maximum complete depth: " 
                             + (maxDepth - 1));
                     System.out.println("final move from: " 
-                            + bestMove.from + " to: " + bestMove.to);
+                            + bestMove.from + " to: " + bestMove.to); // TODO: test this
                     return lastPlyBestMove;
                 }
+
+                // TODO: search transposition table
 
                 Move m = moves.at(i);
                 if (m.flag == Flag.ONLY_ATTACK) {
@@ -91,11 +101,14 @@ public class Engine {
             // return (col == Piece.WHITE.val()) ? evaluate(rec) : -evaluate(rec);
         }
 
-        int opCol = col == Piece.WHITE.val()
-        ? Piece.BLACK.val()
+        int opCol = (col == Piece.WHITE.val()) 
+        ? Piece.BLACK.val() 
         : Piece.WHITE.val();
         double bestEval = -Global.INFINITY;
-        MoveList moves = Board.allMoves(rec, col);
+
+        MoveList moves  = Board.allMoves(rec, col);
+        moves           = Orderer.orderMoves(moves);
+
         for (int i = 0; i < moves.length(); i++) {
             Move m = moves.at(i);
             if (m.flag == Flag.ONLY_ATTACK) {
@@ -135,7 +148,10 @@ public class Engine {
         int opCol = col == Piece.WHITE.val()
         ? Piece.BLACK.val()
         : Piece.WHITE.val();
-        MoveList moves = Board.allMoves(rec, col);
+
+        MoveList moves  = Board.allMoves(rec, col);
+        moves           = Orderer.orderMoves(moves);
+        
         for (int i = 0; i < moves.length(); i++) {
             Move m = moves.at(i);
             if (m.flag == Flag.ONLY_ATTACK) {
@@ -167,11 +183,9 @@ public class Engine {
     }
 
     private double pieceValue(BoardRecord rec, int pos) {
-        double value = 0.0;
-        int pieceCol = rec.board[pos] & 0b11000;
-        int heatmapIndex = (pieceCol == Piece.WHITE.val())
-        ? pos
-        : 63 - pos;
+        double value        = 0.0;
+        int pieceCol        = rec.board[pos] & 0b11000;
+        int heatmapIndex    = (pieceCol == Piece.WHITE.val()) ? pos : 63 - pos;
 
         switch (rec.board[pos] & 0b111) {
         case 1:
@@ -190,6 +204,7 @@ public class Engine {
             value = 900.0 + Heatmap.pawnMap[heatmapIndex];
             break;
         case 6:
+            // king heatmap changes in endgame
             double[] heatmap = (rec.minorPieceCount() < 3)
             ? Heatmap.kingEndMap
             : Heatmap.kingStartMap;
@@ -199,10 +214,7 @@ public class Engine {
             value = 0.0;
         }
 
-        if (pieceCol == Piece.BLACK.val()) {
-            value = -value;
-        } 
-        return value;
+        return (pieceCol == Piece.WHITE.val()) ? value : - value;
     }
 
     private double evaluate(BoardRecord rec) {

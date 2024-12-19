@@ -1,15 +1,15 @@
 package com.ang.Moves;
 
 public class Move {
-    public int from;
-    public int to;
-    public Flag flag;
-    public boolean attack;
+    public int      from;
+    public int      to;
+    public Flag     flag;
+    public boolean  attack;
 
     public Move(int from, int to, Flag flag, boolean attack) {
-        this.from = from;
-        this.to = to;
-        this.flag = flag;
+        this.from   = from;
+        this.to     = to;
+        this.flag   = flag;
         this.attack = attack;
     }
 
