@@ -10,5 +10,6 @@ public class Main {
         Engine e = new Engine(500, Piece.BLACK);
         Game g = new Game(SQUARE_SIZE, RENDER_SCALE);
         g.init(e);
+        // g.test();
     }
 }

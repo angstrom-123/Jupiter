@@ -37,6 +37,49 @@ public class Game implements GameInterface {
         renderer.drawAllSprites(mainRec);
     }
 
+    public void test() {
+        String startFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+        BoardRecord testRecord = new BoardRecord(startFEN);
+        Move[] moves = new Move[]{
+            new Move(51,35),
+            new Move(11,27),
+            new Move(50,34),
+            new Move(27,34),
+            new Move(62,45),
+            new Move(6, 21),
+            new Move(54,46),
+            new Move(12,20),
+            new Move(61,54),
+            new Move(1,16),
+            new Move(57,40)};
+        for (Move move : moves) {
+            Board.tryMove(testRecord, move);
+        }
+
+        Engine none = new Engine(4000, Piece.BLACK, false,  false,  false   );
+        Engine ab   = new Engine(4000, Piece.BLACK, true,   false,  false   );
+        Engine mo   = new Engine(4000, Piece.BLACK, false,  true,   false   );
+        Engine tt   = new Engine(4000, Piece.BLACK, false,  true,   true    );
+        Engine all  = new Engine(4000, Piece.BLACK);
+
+        System.out.println("none");
+        none.generateMove(testRecord);
+
+        System.out.println("ab");
+        ab.generateMove(testRecord);
+
+        System.out.println("mo");
+        mo.generateMove(testRecord);
+
+        System.out.println("tt");
+        tt.generateMove(testRecord);
+
+        System.out.println("all");
+        all.generateMove(testRecord);
+        
+        System.out.println();
+    }
+
     @Override
     public void mouseClick(int x, int y) {
         double actualSquareSize = Math.round(squareSize * renderScale);

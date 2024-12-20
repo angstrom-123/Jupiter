@@ -27,6 +27,28 @@ public class MoveList {
         elements[end++] = m;
     }
 
+    public void attacksToFront() {
+        Move[] newElements = new Move[elements.length];
+        int newElementsEnd = 0;
+        for (Move move : elements) {
+            if (move == null) {
+                break;
+            }
+            if (move.attack) {
+                newElements[newElementsEnd++] = move;
+            }
+        }
+        for (Move move : elements) {
+            if (move == null) {
+                break;
+            }
+            if (!move.attack) {
+                newElements[newElementsEnd++] = move;
+            }
+        }
+        elements = newElements;
+    }
+
     public void sendToFront(Move m) {
         Move[] newElements = new Move[elements.length];
         newElements[0] = m;

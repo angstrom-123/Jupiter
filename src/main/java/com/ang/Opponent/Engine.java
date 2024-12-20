@@ -21,21 +21,33 @@ import com.ang.Util.BoardRecord;
 // TODO : fixes
 //      - bot doesn't find mate well in endgames, usually stalemate
 public class Engine {  
-    private int timeLimit;
-    private int engineCol;
-    private int playerCol;
+    private int     timeLimit;
+    private int     engineCol;
+    private int     playerCol;
+
+    private boolean useAlphaBeta    = true;
+    private boolean useMoveOrdering = true;
+    private boolean useTTable       = true;
 
     private TranspositionTable tTable = new TranspositionTable();
-    private int ttHits = 0;
 
+    public Engine(int searchTime, Piece col, boolean ab, boolean mo, boolean tt) {
+        this(searchTime, col.val());
+        this.useAlphaBeta       = ab;
+        this.useMoveOrdering    = mo;
+        this.useTTable          = tt;
+    }
+    public Engine(int searchTime, Piece col) {
+        this(searchTime, col.val());
+    }
     public Engine(int searchTime, int col) {
         this.timeLimit = searchTime;
         this.engineCol = col;
         this.playerCol = Piece.WHITE.val();
     }
 
-    public Engine(int searchTime, Piece col) {
-        this(searchTime, col.val());
+    public void testSearch(BoardRecord rec) {
+
     }
 
     public Move generateMove(BoardRecord rec) {
@@ -43,20 +55,18 @@ public class Engine {
         int     maxDepth        = 1;
         long    endTime         = System.currentTimeMillis() + timeLimit;
         while (true) {
-            ttHits = 0;
-
             double bestEval = -Global.INFINITY;
             Move bestMove = Move.invalid();         
             MoveList moves = Board.allMoves(rec, engineCol);
-            moves = orderMoves(rec, moves, engineCol);
+            if (useMoveOrdering) {
+                moves = orderMoves(rec, moves, engineCol);
+            }
             for (int i = 0; i < moves.length(); i++) {
                 if (System.currentTimeMillis() >= endTime) {
                     System.out.println("maximum complete depth: " 
                             + (maxDepth - 1));
                     System.out.println("final move from: " 
                             + lastPlyBestMove.from + " to: " + lastPlyBestMove.to);
-                    System.out.println("transposition table size : " 
-                            + tTable.size + " hits : " + ttHits);
 
                     return lastPlyBestMove;
                 }
@@ -68,9 +78,15 @@ public class Engine {
                 BoardRecord tempRec = rec.copy();
                 
                 if (Board.tryMove(tempRec, m)) {
-                    double eval = alphaBetaNega(tempRec, 
-                            -Global.INFINITY, Global.INFINITY, 
-                            playerCol, maxDepth);
+                    double eval;
+                    if (useAlphaBeta) {
+                        eval = alphaBetaNega(tempRec, 
+                                -Global.INFINITY, Global.INFINITY, 
+                                playerCol, maxDepth);
+                    } else {
+                        eval = negaMax(tempRec, playerCol, maxDepth);
+                    }
+                    
                     if (engineCol == Piece.BLACK.val()) {
                         eval = -eval;
                     }
@@ -93,6 +109,59 @@ public class Engine {
         }
     }
 
+    private double negaMax(BoardRecord rec, int col, int depth) {
+        if (depth == 0) {
+            return (col == Piece.WHITE.val()) 
+            ? evaluate(rec) 
+            : -evaluate(rec);
+        }
+
+        int opCol = (col == Piece.WHITE.val()) 
+        ? Piece.BLACK.val() 
+        : Piece.WHITE.val();
+        double bestEval = -Global.INFINITY;
+
+        MoveList moves  = Board.allMoves(rec, col);
+        if (useMoveOrdering) {
+            moves = orderMoves(rec, moves, col);
+        }
+        for (int i = 0; i < moves.length(); i++) {
+            Move move = moves.at(i);
+            if (move.flag == Flag.ONLY_ATTACK) {
+                continue;
+            }
+
+            BoardRecord tempRec = rec.copy();
+            if (Board.tryMove(tempRec, move)) {
+                double eval = -negaMax(tempRec, opCol, depth - 1);
+                if (eval > bestEval) {
+                    bestEval = eval;
+                    if (useTTable) {
+                        // save to transposition table
+                        TableEntry te = new TableEntry( 
+                                Node.PV,
+                                move,
+                                eval,
+                                depth,
+                                0        );
+                        tTable.saveHash(te, tTable.zobristHash(tempRec, col));
+                    }
+                }
+                if (useTTable) {
+                    // save to transposition table
+                    TableEntry te = new TableEntry( 
+                        Node.CUT,
+                        move,
+                        eval,
+                        depth,
+                        0        );
+                    tTable.saveHash(te, tTable.zobristHash(tempRec, col));
+                }
+            }
+        }
+        return bestEval;
+    }
+
     private double alphaBetaNega(BoardRecord rec, double alpha, double beta, 
             int col, int depth) {
         if (depth == 0) {
@@ -105,8 +174,9 @@ public class Engine {
         double bestEval = -Global.INFINITY;
 
         MoveList moves  = Board.allMoves(rec, col);
-        moves           = orderMoves(rec, moves, col);
-
+        if (useMoveOrdering) {
+            moves = orderMoves(rec, moves, col);
+        }
         for (int i = 0; i < moves.length(); i++) {
             Move move = moves.at(i);
             if (move.flag == Flag.ONLY_ATTACK) {
@@ -121,33 +191,39 @@ public class Engine {
                     bestEval = eval;
                     if (eval > alpha) {
                         alpha = eval;
-                        // save to transposition table
-                        TableEntry te = new TableEntry( 
-                                Node.ALL,
-                                move,
-                                eval,
-                                depth,
-                                0        );
-                        tTable.saveHash(te, tTable.zobristHash(tempRec, col));
+                        if (useTTable) {
+                            // save to transposition table
+                            TableEntry te = new TableEntry( 
+                                    Node.ALL,
+                                    move,
+                                    eval,
+                                    depth,
+                                    0        );
+                            tTable.saveHash(te, tTable.zobristHash(tempRec, col));
+                        }
                     } else {
-                        // save to transposition table
-                        TableEntry te = new TableEntry( 
-                                Node.PV,
-                                move,
-                                eval,
-                                depth,
-                                0        );
-                        tTable.saveHash(te, tTable.zobristHash(tempRec, col));
+                        if (useTTable) {
+                            // save to transposition table
+                            TableEntry te = new TableEntry( 
+                                    Node.PV,
+                                    move,
+                                    eval,
+                                    depth,
+                                    0        );
+                            tTable.saveHash(te, tTable.zobristHash(tempRec, col));
+                        }
                     }
                 }
-                // save to transposition table
-                TableEntry te = new TableEntry( 
-                    Node.CUT,
-                    move,
-                    eval,
-                    depth,
-                    0        );
-                tTable.saveHash(te, tTable.zobristHash(tempRec, col));
+                if (useTTable) {
+                    // save to transposition table
+                    TableEntry te = new TableEntry( 
+                        Node.CUT,
+                        move,
+                        eval,
+                        depth,
+                        0        );
+                    tTable.saveHash(te, tTable.zobristHash(tempRec, col));
+                }
                 if (alpha >= beta) {
                     break;
                 }
@@ -253,10 +329,13 @@ public class Engine {
     }
 
     private MoveList orderMoves(BoardRecord rec, MoveList moves, int moveCol) {
-        TableEntry te = tTable.searchTable(tTable.zobristHash(rec, moveCol));
-        if (te != null) { // tt hit
-            ttHits++;
-            moves.sendToFront(te.bestMove);
+        moves.attacksToFront();
+
+        if (useTTable) {
+            TableEntry te = tTable.searchTable(tTable.zobristHash(rec, moveCol));
+            if (te != null) { // tt hit
+                moves.sendToFront(te.bestMove);
+            }
         }
         
         return moves;
