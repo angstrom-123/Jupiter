@@ -214,20 +214,6 @@ public class BoardRecord {
             return;
         }
 
-        // TODO : bugfix
-        // -1 OOB of arr len 4
-        // at quiesce for engine evaluating a bishop move to an empty square
-        // depth: 1 eval: 595.0 from: 8 to: 0       -   1
-        // depth: 1 eval: 610.0 from: 5 to: 14      -   2
-        // depth: 1 eval: 615.0 from: 28 to: 34     -   3
-        // depth: 1 eval: 620.0 from: 2 to: 1       -   4
-        // depth: 2 eval: 615.0 from: 8 to: 0       -   1
-        // depth: 2 eval: 630.0 from: 5 to: 14      -   2
-        // depth: 2 eval: 745.0 from: 5 to: 23      -   3
-        // depth: 3 eval: 605.0 from: 8 to: 0       -   1   - next in line could be 5 - 14 : bishop to empty
-        // Exception in thread "AWT-EventQueue-0" java.lang.ArrayIndexOutOfBoundsException: Index -1 out of bounds for length 4
-        // at com.ang.Util.BoardRecord.posArrAdd(BoardRecord.java:215)
-
         movingArr[movingArrEnd] = pos;
         allPieces[allPiecesEnd++] = pos;
     }

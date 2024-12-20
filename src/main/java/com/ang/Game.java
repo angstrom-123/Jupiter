@@ -8,6 +8,8 @@ import com.ang.Engine.Search;
 import com.ang.Graphics.Renderer;
 import com.ang.Util.GameInterface;
 
+// TODO : implement checkmate
+
 public class Game implements GameInterface {
     private int         squareSize;
     private double      renderScale;

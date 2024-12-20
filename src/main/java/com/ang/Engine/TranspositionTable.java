@@ -6,6 +6,8 @@ import com.ang.Core.Piece;
 
 import java.util.HashMap;
 
+// TODO : add limit on table size, cull extremely outdated transpositions
+
 public class TranspositionTable {
     public int size = 0;
 

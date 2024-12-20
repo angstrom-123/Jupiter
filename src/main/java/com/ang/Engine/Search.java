@@ -26,11 +26,11 @@ public class Search {
     private int     engineCol;
     private int     playerCol;
 
-    private boolean useAlphaBeta    = true;
-    private boolean useMoveOrdering = true;
-    private boolean useTTable       = true;
+    private boolean useAlphaBeta        = true;
+    private boolean useMoveOrdering     = true;
+    private boolean useTTable           = true;
 
-    private TranspositionTable tTable = new TranspositionTable();
+    private TranspositionTable tTable   = new TranspositionTable();
 
     public Search(int searchTime, Piece col, boolean ab, boolean mo, boolean tt) {
         this(searchTime, col.val());

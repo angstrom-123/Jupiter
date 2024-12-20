@@ -4,7 +4,11 @@ import com.ang.Core.Moves.Flag;
 import com.ang.Core.Moves.Move;
 import com.ang.Core.Moves.MoveList;
 
-// TODO: bugfix - engine can sometimes move player's pieces
+// TODO : bugfix - engine can sometimes move player's pieces
+
+// TODO : bugfix - player can sometimes move into attacked squares
+//          - eg, rook blocks off a rank, king can step into it
+//              - not tracking attacks correctly??
 
 public class Board {
     // public
@@ -171,7 +175,7 @@ public class Board {
         // king moved or in check
         for (int pos : rec.kings) {
             if (pos == -1) {
-                continue; // TODO : try with break
+                continue;
             }
             if ((rec.board[pos] & 0b11000) == Piece.WHITE.val()) {
                 if (isInCheck(rec, pos)) {
