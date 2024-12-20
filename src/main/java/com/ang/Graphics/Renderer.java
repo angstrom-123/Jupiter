@@ -1,8 +1,8 @@
 package com.ang.Graphics;
 
-import com.ang.GameInterface;
-import com.ang.Piece;
-import com.ang.Util.BoardRecord;
+import com.ang.Core.BoardRecord;
+import com.ang.Core.Piece;
+import com.ang.Util.GameInterface;
 import com.ang.Util.InputHandler;
 
 import java.awt.image.BufferedImage;
@@ -14,19 +14,17 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 
 public class Renderer extends JFrame {
-    final Colour            DARK_COL       = new Colour(112, 102, 119);
-    final Colour            LIGHT_COL      = new Colour(204, 183, 174);
-    final Colour            HIGHLIGHT_COL  = new Colour(255, 106,  60);
+    private final Colour    DARK_COL       = new Colour(112, 102, 119);
+    private final Colour    LIGHT_COL      = new Colour(204, 183, 174);
+    private final Colour    HIGHLIGHT_COL  = new Colour(255, 106,  60);
     
     private int             squareSize;
     private double          scale;
     private int             size;
-
     private BufferedImage   img;
     private ImagePanel      imgPanel;
     private JFrame          frame;
     private GameInterface   gameInterface;
-
     private BufferedImage[] sprites;
 
     public Renderer(int squareSize, double scale, GameInterface gameInterface) {
@@ -73,8 +71,8 @@ public class Renderer extends JFrame {
             "/KingSprite.png",
             "/StarSprite.png"
         };
-        Colour lightTint    = new Colour(255, 255, 255);
-        Colour darkTint     = new Colour(  0,   0,   0);
+        final Colour lightTint    = new Colour(255, 255, 255);
+        final Colour darkTint     = new Colour(  0,   0,   0);
 
         for (int i = 0; i < paths.length; i++) {
             BufferedImage s = new BufferedImage(squareSize, squareSize,

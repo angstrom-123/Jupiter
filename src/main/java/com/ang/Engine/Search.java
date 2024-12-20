@@ -1,12 +1,13 @@
-package com.ang.Opponent;
+package com.ang.Engine;
 
-import com.ang.Board;
 import com.ang.Global;
-import com.ang.Piece;
-import com.ang.Moves.*;
-import com.ang.Util.BoardRecord;
+import com.ang.Core.Board;
+import com.ang.Core.BoardRecord;
+import com.ang.Core.Piece;
+import com.ang.Core.Moves.*;
 
-// TODO : benchmark move gen with / without "optimizations"
+// TODO : bugfix - engine can sometimes move player's pieces
+//          - (queen takes pawn, engine moves my queen);
 
 // TODO : compare move gen results to StockFish in random positions
 //      - need to allow engine to play as white and black
@@ -20,7 +21,7 @@ import com.ang.Util.BoardRecord;
 
 // TODO : fixes
 //      - bot doesn't find mate well in endgames, usually stalemate
-public class Engine {  
+public class Search {  
     private int     timeLimit;
     private int     engineCol;
     private int     playerCol;
@@ -31,23 +32,19 @@ public class Engine {
 
     private TranspositionTable tTable = new TranspositionTable();
 
-    public Engine(int searchTime, Piece col, boolean ab, boolean mo, boolean tt) {
+    public Search(int searchTime, Piece col, boolean ab, boolean mo, boolean tt) {
         this(searchTime, col.val());
         this.useAlphaBeta       = ab;
         this.useMoveOrdering    = mo;
         this.useTTable          = tt;
     }
-    public Engine(int searchTime, Piece col) {
+    public Search(int searchTime, Piece col) {
         this(searchTime, col.val());
     }
-    public Engine(int searchTime, int col) {
+    public Search(int searchTime, int col) {
         this.timeLimit = searchTime;
         this.engineCol = col;
         this.playerCol = Piece.WHITE.val();
-    }
-
-    public void testSearch(BoardRecord rec) {
-
     }
 
     public Move generateMove(BoardRecord rec) {
@@ -139,7 +136,7 @@ public class Engine {
                     if (useTTable) {
                         // save to transposition table
                         TableEntry te = new TableEntry( 
-                                Node.PV,
+                                SearchNode.PV,
                                 move,
                                 eval,
                                 depth,
@@ -150,7 +147,7 @@ public class Engine {
                 if (useTTable) {
                     // save to transposition table
                     TableEntry te = new TableEntry( 
-                        Node.CUT,
+                        SearchNode.CUT,
                         move,
                         eval,
                         depth,
@@ -194,7 +191,7 @@ public class Engine {
                         if (useTTable) {
                             // save to transposition table
                             TableEntry te = new TableEntry( 
-                                    Node.ALL,
+                                    SearchNode.ALL,
                                     move,
                                     eval,
                                     depth,
@@ -205,7 +202,7 @@ public class Engine {
                         if (useTTable) {
                             // save to transposition table
                             TableEntry te = new TableEntry( 
-                                    Node.PV,
+                                    SearchNode.PV,
                                     move,
                                     eval,
                                     depth,
@@ -217,7 +214,7 @@ public class Engine {
                 if (useTTable) {
                     // save to transposition table
                     TableEntry te = new TableEntry( 
-                        Node.CUT,
+                        SearchNode.CUT,
                         move,
                         eval,
                         depth,

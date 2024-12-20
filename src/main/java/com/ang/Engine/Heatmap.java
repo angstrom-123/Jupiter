@@ -1,7 +1,7 @@
-package com.ang.Opponent;
+package com.ang.Engine;
 
 public class Heatmap {
-    public static double[] pawnMap = new double[]{
+    public final static double[] pawnMap = new double[]{
          0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,
         50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0,
         10.0, 10.0, 20.0, 30.0, 30.0, 20.0, 10.0, 10.0,
@@ -12,7 +12,7 @@ public class Heatmap {
          0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0
     };
 
-    public static double[] knightMap = new double[]{
+    public final static double[] knightMap = new double[]{
         -50.0,-40.0,-30.0,-30.0,-30.0,-30.0,-40.0,-50.0,
         -40.0,-20.0,  0.0,  0.0,  0.0,  0.0,-20.0,-40.0,
         -30.0,  0.0, 10.0, 15.0, 15.0, 10.0,  0.0,-30.0,
@@ -23,7 +23,7 @@ public class Heatmap {
         -50.0,-40.0,-30.0,-30.0,-30.0,-30.0,-40.0,-50.0
     };
 
-    public static double[] bishopMap = new double[]{
+    public final static double[] bishopMap = new double[]{
         -20.0,-10.0,-10.0,-10.0,-10.0,-10.0,-10.0,-20.0,
         -10.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,-10.0,
         -10.0,  0.0,  5.0, 10.0, 10.0,  5.0,  0.0,-10.0,
@@ -34,7 +34,7 @@ public class Heatmap {
         -20.0,-10.0,-10.0,-10.0,-10.0,-10.0,-10.0,-20.0,
     };
 
-    public static double[] rookMap = new double[]{
+    public final static double[] rookMap = new double[]{
         0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,
         5.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0,  5.0,
        -5.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, -5.0,
@@ -45,7 +45,7 @@ public class Heatmap {
         0.0,  0.0,  0.0,  5.0,  5.0,  0.0,  0.0,  0.0
     };
 
-    public static double[] queenMap = new double[]{
+    public final static double[] queenMap = new double[]{
         -20.0,-10.0,-10.0, -5.0, -5.0,-10.0,-10.0,-20.0,
         -10.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,-10.0,
         -10.0,  0.0,  5.0,  5.0,  5.0,  5.0,  0.0,-10.0,
@@ -56,7 +56,7 @@ public class Heatmap {
         -20.0,-10.0,-10.0, -5.0, -5.0,-10.0,-10.0,-20.0
     };
 
-    public static double[] kingStartMap = new double[]{
+    public final static double[] kingStartMap = new double[]{
         -30.0,-40.0,-40.0,-50.0,-50.0,-40.0,-40.0,-30.0,
         -30.0,-40.0,-40.0,-50.0,-50.0,-40.0,-40.0,-30.0,
         -30.0,-40.0,-40.0,-50.0,-50.0,-40.0,-40.0,-30.0,
@@ -67,7 +67,7 @@ public class Heatmap {
          20.0, 30.0, 10.0,  0.0,  0.0, 10.0, 30.0, 20.0
     };
 
-    public static double[] kingEndMap = new double[]{
+    public final static double[] kingEndMap = new double[]{
         -50.0,-40.0,-30.0,-20.0,-20.0,-30.0,-40.0,-50.0,
         -30.0,-20.0,-10.0,  0.0,  0.0,-10.0,-20.0,-30.0,
         -30.0,-10.0, 20.0, 30.0, 30.0, 20.0,-10.0,-30.0,

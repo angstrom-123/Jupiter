@@ -1,13 +1,13 @@
-package com.ang.Opponent;
+package com.ang.Engine;
 
-public enum Node {
+public enum SearchNode {
     PV  (3),
     ALL (2),
     CUT (1);
 
     private int precedence;
 
-    private Node(int precedence) {
+    private SearchNode(int precedence) {
         this.precedence = precedence;
     }
 

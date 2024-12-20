@@ -1,12 +1,10 @@
 package com.ang.Util;
 
-import com.ang.GameInterface;
-
-import java.awt.event.MouseListener;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 
 public class InputHandler implements MouseListener {
-    GameInterface gameInterface;
+    private GameInterface gameInterface;
 
     public InputHandler(GameInterface gi) {
         gameInterface = gi;

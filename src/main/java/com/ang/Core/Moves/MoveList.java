@@ -1,4 +1,4 @@
-package com.ang.Moves;
+package com.ang.Core.Moves;
 
 public class MoveList {
     private Move[]  elements;

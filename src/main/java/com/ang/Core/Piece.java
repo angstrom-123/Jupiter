@@ -1,4 +1,4 @@
-package com.ang;
+package com.ang.Core;
 
 public enum Piece {
     NONE    ( 0),

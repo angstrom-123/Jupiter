@@ -1,9 +1,10 @@
-package com.ang;
+package com.ang.Core;
 
-import com.ang.Moves.Flag;
-import com.ang.Moves.Move;
-import com.ang.Moves.MoveList;
-import com.ang.Util.BoardRecord;
+import com.ang.Core.Moves.Flag;
+import com.ang.Core.Moves.Move;
+import com.ang.Core.Moves.MoveList;
+
+// TODO: bugfix - engine can sometimes move player's pieces
 
 public class Board {
     // public

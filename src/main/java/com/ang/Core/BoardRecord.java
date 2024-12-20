@@ -1,8 +1,7 @@
-package com.ang.Util;
+package com.ang.Core;
 
-import com.ang.Board;
-import com.ang.Piece;
-import com.ang.Moves.MoveList;
+import com.ang.Core.Moves.MoveList;
+import com.ang.Util.FENReader;
 
 public class BoardRecord {
     public int[]    board;

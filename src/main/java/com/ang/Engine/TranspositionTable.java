@@ -1,8 +1,8 @@
-package com.ang.Opponent;
+package com.ang.Engine;
 
 import com.ang.Global;
-import com.ang.Piece;
-import com.ang.Util.BoardRecord;
+import com.ang.Core.BoardRecord;
+import com.ang.Core.Piece;
 
 import java.util.HashMap;
 

@@ -1,4 +1,4 @@
-package com.ang.Moves;
+package com.ang.Core.Moves;
 
 public enum Flag {
     NONE,

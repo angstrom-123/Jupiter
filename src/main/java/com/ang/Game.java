@@ -1,9 +1,12 @@
 package com.ang;
 
+import com.ang.Core.Board;
+import com.ang.Core.BoardRecord;
+import com.ang.Core.Piece;
+import com.ang.Core.Moves.*;
+import com.ang.Engine.Search;
 import com.ang.Graphics.Renderer;
-import com.ang.Moves.*;
-import com.ang.Opponent.Engine;
-import com.ang.Util.BoardRecord;
+import com.ang.Util.GameInterface;
 
 public class Game implements GameInterface {
     private int         squareSize;
@@ -15,14 +18,14 @@ public class Game implements GameInterface {
 
     public BoardRecord  mainRec;
     public Renderer     renderer;
-    public Engine       engine;
+    public Search       engine;
     
     public Game(int squareSize, double renderScale) {
         this.squareSize = 45;
         this.renderScale = 1.2;
     }
 
-    public void init(Engine engine) {
+    public void init(Search engine) {
         this.engine     = engine;
 
         selected        = -1;
@@ -56,11 +59,11 @@ public class Game implements GameInterface {
             Board.tryMove(testRecord, move);
         }
 
-        Engine none = new Engine(4000, Piece.BLACK, false,  false,  false   );
-        Engine ab   = new Engine(4000, Piece.BLACK, true,   false,  false   );
-        Engine mo   = new Engine(4000, Piece.BLACK, false,  true,   false   );
-        Engine tt   = new Engine(4000, Piece.BLACK, false,  true,   true    );
-        Engine all  = new Engine(4000, Piece.BLACK);
+        Search none = new Search(4000, Piece.BLACK, false,  false,  false   );
+        Search ab   = new Search(4000, Piece.BLACK, true,   false,  false   );
+        Search mo   = new Search(4000, Piece.BLACK, false,  true,   false   );
+        Search tt   = new Search(4000, Piece.BLACK, false,  true,   true    );
+        Search all  = new Search(4000, Piece.BLACK);
 
         System.out.println("none");
         none.generateMove(testRecord);
@@ -76,7 +79,7 @@ public class Game implements GameInterface {
 
         System.out.println("all");
         all.generateMove(testRecord);
-        
+
         System.out.println();
     }
 
