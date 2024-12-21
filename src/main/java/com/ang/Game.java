@@ -11,38 +11,53 @@ import com.ang.Util.GameInterface;
 // TODO : implement checkmate
 
 public class Game implements GameInterface {
-    private int         squareSize;
-    private double      renderScale;
+    private int             squareSize;
+    private double          renderScale;
+    private int             selected;
+    private boolean         playerCanMove;
+    private MoveList        legalMoves;
+    private int             playerCol;
+    private int             engineCol;
 
-    private int         selected;
-    private MoveList    legalMoves;
-    private int         colToMove;
-
-    public BoardRecord  mainRec;
-    public Renderer     renderer;
-    public Search       engine;
+    public BoardRecord   gameBoard;
+    public Renderer         renderer;
+    public Search           engineSearch;
     
-    public Game(int squareSize, double renderScale) {
-        this.squareSize = 45;
-        this.renderScale = 1.2;
+    public Game(Search engineSearch) {
+        this.engineSearch = engineSearch;
+        this.engineCol = engineSearch.engineCol;
+        this.playerCol = (engineCol == Piece.WHITE.val()) 
+        ? Piece.BLACK.val()
+        : Piece.WHITE.val();
     }
 
-    public void init(Search engine) {
-        this.engine     = engine;
+    public void init(int squareSize, double renderScale) {
+        this.squareSize     = 45;
+        this.renderScale    = 1.2;
 
-        selected        = -1;
-        colToMove       = Piece.WHITE.val();
-        // colToMove       = Piece.BLACK.val();
-        legalMoves      = new MoveList(0);
-        String startFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-        mainRec         = new BoardRecord(startFEN);
-        renderer        = new Renderer(squareSize, renderScale, this);
+        selected            = -1;
+        legalMoves          = new MoveList(0);
+        String startFEN     = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+        gameBoard           = new BoardRecord(startFEN);
+        renderer            = new Renderer(squareSize, renderScale, this);
 
         renderer.drawBoard();
-        renderer.drawAllSprites(mainRec);
+        renderer.drawAllSprites(gameBoard);
+
+        if (engineCol == Piece.WHITE.val()) {
+            playerCanMove = false;
+            Move engineMove = engineSearch.generateMove(gameBoard);
+            if (!Board.tryMove(gameBoard, engineMove)) {
+                System.err.println("Engine could not make a valid move");
+                return;  
+            }
+            renderer.drawBoard();
+            renderer.drawAllSprites(gameBoard);
+        }
+        playerCanMove = true;
     }
 
-    public void test() {
+    public void test(int time) {
         String startFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
         BoardRecord testRecord = new BoardRecord(startFEN);
         Move[] moves = new Move[]{
@@ -61,11 +76,11 @@ public class Game implements GameInterface {
             Board.tryMove(testRecord, move);
         }
 
-        Search none = new Search(4000, Piece.BLACK, false,  false,  false   );
-        Search ab   = new Search(4000, Piece.BLACK, true,   false,  false   );
-        Search mo   = new Search(4000, Piece.BLACK, false,  true,   false   );
-        Search tt   = new Search(4000, Piece.BLACK, false,  true,   true    );
-        Search all  = new Search(4000, Piece.BLACK);
+        Search none = new Search(time, Piece.BLACK, false,  false,  false   );
+        Search ab   = new Search(time, Piece.BLACK, true,   false,  false   );
+        Search mo   = new Search(time, Piece.BLACK, false,  true,   false   );
+        Search tt   = new Search(time, Piece.BLACK, false,  true,   true    );
+        Search all  = new Search(time, Piece.BLACK);
 
         System.out.println("none");
         none.generateMove(testRecord);
@@ -91,53 +106,50 @@ public class Game implements GameInterface {
         int xCoord = (int) Math.floor((double) x / actualSquareSize);
         int yCoord = (int) Math.floor((double) y / actualSquareSize);
         int pressed = yCoord * 8 + xCoord;  
-        if ((mainRec.board[pressed] & 0b11000) == colToMove) {
+        if (((gameBoard.board[pressed] & 0b11000) == playerCol)
+                && playerCanMove) {
             selected = pressed;
             renderer.drawBoard();
             renderer.highlightSquare(xCoord, yCoord);
-            renderer.drawAllSprites(mainRec);
+            renderer.drawAllSprites(gameBoard);
             legalMoves = showMoves(xCoord, yCoord);
         } else if (selected > -1) {
             Move playerMove = findMove(new Move(selected, pressed), legalMoves);
-            if (!Board.tryMove(mainRec, playerMove)) {
+            if (!Board.tryMove(gameBoard, playerMove)) {
                 System.err.println("Player did not make a valid move");
                 return;
             }
+            playerCanMove = false;
 
             renderer.drawBoard();
-            renderer.drawAllSprites(mainRec);
+            renderer.drawAllSprites(gameBoard);
 
             selected = -1;
-            colToMove = colToMove == Piece.WHITE.val() 
-            ? Piece.BLACK.val() 
-            : Piece.WHITE.val();
 
-            // mainRec.showPositions(); // debug
+            gameBoard.showPositions(); // debug
 
-            Move engineMove = engine.generateMove(mainRec);
-            if (!Board.tryMove(mainRec, engineMove)) {
+            Move engineMove = engineSearch.generateMove(gameBoard);
+            if (!Board.tryMove(gameBoard, engineMove)) {
                 System.err.println("Engine could not make a valid move");
                 return;  
             }
 
+            playerCanMove = true;
+
             renderer.drawBoard();
-            renderer.drawAllSprites(mainRec);
+            renderer.drawAllSprites(gameBoard);
 
-            colToMove = colToMove == Piece.WHITE.val() 
-                ? Piece.BLACK.val() 
-                : Piece.WHITE.val();
-
-            // mainRec.showPositions(); // debug
+            gameBoard.showPositions(); // debug
         }
     }
 
     private MoveList showMoves(int x, int y) {
-        MoveList moves = Board.pieceMoves(mainRec, selected);   
+        MoveList moves = Board.pieceMoves(gameBoard, selected);   
         for (int i = 0; i < moves.length(); i++) {
             if (moves.at(i).flag == Flag.ONLY_ATTACK) {
                 continue;
             }
-            BoardRecord tempRec = mainRec.copy();
+            BoardRecord tempRec = gameBoard.copy();
             if (!Board.tryMove(tempRec, moves.at(i))) {
                 continue;
             }

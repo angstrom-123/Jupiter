@@ -1,30 +1,29 @@
 package com.ang.Core.Moves;
 
 public class MoveList {
-    private Move[]  elements;
-    private int     end;
+    private Move[] elements;
+    private int end;
 
     public MoveList(int maxElements) {
-        elements    = new Move[maxElements];
-        end         = 0;
+        elements = new Move[maxElements];
+        end = 0;
+    }
+
+    public void add(Move m) {
+        if (end >= elements.length) {
+            return;
+        }
+        elements[end++] = m;
     }
 
     public void add(MoveList ml) {
         for (int i = 0; i < ml.length(); i++) {
-            if (ml.at(i) == null) {
+            Move m = ml.at(i);
+            if (m == null) {
                 return;
             }
-            elements[end++] = ml.at(i);
+            add(m);
         }
-    }
-
-    public void add(Move m){
-        if (end >= elements.length) {
-            System.err.println("Cannot add move " + m.from + " to " + m.to
-                    + " to list, maximum reached");
-            return;
-        }
-        elements[end++] = m;
     }
 
     public void attacksToFront() {

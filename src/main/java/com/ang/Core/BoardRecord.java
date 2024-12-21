@@ -1,314 +1,297 @@
 package com.ang.Core;
 
-import com.ang.Core.Moves.MoveList;
 import com.ang.Util.FENReader;
+import com.ang.Core.Moves.*;
 
 public class BoardRecord {
     public int[]    board;
 
     public int      epPawnPos;
+
     public int[]    cRights;
     public int[]    cRightsLocks;
 
-    public int[]    pawns;
-    public int[]    knights;
-    public int[]    bishops;
-    public int[]    rooks;
-    public int[]    queens;
-    public int[]    kings;
-    public int[]    allPieces;
-    public int[]    movedPieces;
+    public IntList  pawns;
+    public IntList  knights;
+    public IntList  bishops;
+    public IntList  rooks;
+    public IntList  queens;
+    public IntList  kings;
+    public IntList  allPieces;
     public int[]    whiteAttacks;
     public int[]    blackAttacks;
 
-    private int     pawnsEnd;
-    private int     knightsEnd;
-    private int     bishopsEnd;
-    private int     rooksEnd;
-    private int     queensEnd;
-    private int     kingsEnd;
-    private int     allPiecesEnd;
-    private int     movedPiecesEnd;
+    public BoardRecord() {}
 
-    public BoardRecord() {};
+    public BoardRecord(String startFEN) {
+        board           = FENReader.readFEN(startFEN);
 
-    public BoardRecord(String FENString) {
-        board           = FENReader.readFEN(FENString);
-        
         epPawnPos       = -1;
-        cRights         = new int[4];
-        cRightsLocks    = new int[4];
 
-        pawns           = new int[16];
-        knights         = new int[4];
-        bishops         = new int[4];
-        rooks           = new int[4];
-        queens          = new int[18]; // pawns can promote
-        kings           = new int[2];
-        allPieces       = new int[32];
-        movedPieces     = new int[32];
+        cRights         = new int[]{0, 0, 0, 0};
+        cRightsLocks    = new int[]{0, 0, 0, 0};
+
+        pawns           = new IntList(16, -1);
+        knights         = new IntList(20, -1);
+        bishops         = new IntList(20, -1);
+        rooks           = new IntList(20, -1);
+        queens          = new IntList(18, -1);
+        kings           = new IntList( 2, -1);
+        allPieces       = new IntList(64, -1);
         whiteAttacks    = new int[64];
         blackAttacks    = new int[64];
 
-        pawnsEnd        = 0;
-        knightsEnd      = 0;
-        bishopsEnd      = 0;
-        rooksEnd        = 0;
-        queensEnd       = 0;
-        kingsEnd        = 0;
-        allPiecesEnd    = 0;
-        movedPiecesEnd  = 0;
+        initLists();
+    }
 
-        for (int i = 0; i < queens.length; i++) { queens[i] = -1; }
-       
+    private void initLists() {
         for (int i = 0; i < board.length; i++) {
-            int piece = board[i] & 0b00111;
+            int piece = board[i];
+            boolean isBlack = (piece & 0b11000) == Piece.BLACK.val();
+            if (piece == Piece.NONE.val()) { continue; }
 
-            MoveList moves = Board.pieceMoves(this, i);
-            for (int j = 0; j < moves.length(); j++) {
+            allPieces.add(i);
+            MoveList moves;
+            for (int j = 0; j < (moves = Board.pieceMoves(this, i)).length(); j++) {
                 if (moves.at(j).attack) {
-                    attacksArrAdd(board[i] & 0b11000, moves.at(j).to);
+                    if (isBlack) {
+                        blackAttacks[moves.at(j).to]++;
+                    } else {
+                        whiteAttacks[moves.at(j).to]++;
+                    }
                 }
             }
-            
-            if (piece != Piece.NONE.val()) {
-                allPieces[allPiecesEnd]     = i;
-                movedPieces[allPiecesEnd]   = -1;
-                allPiecesEnd++; 
-            }
 
-            switch (piece) {
+            switch (piece & 0b111) {
             case 1:
-                pawns[pawnsEnd++]       = i;
+                pawns.add(i);
                 break;
             case 2:
-                knights[knightsEnd++]   = i;
+                knights.add(i);
                 break;
             case 3:
-                bishops[bishopsEnd++]   = i;
+                bishops.add(i);
                 break;
             case 4:
-                rooks[rooksEnd++]       = i;
+                rooks.add(i);
                 break;
             case 5:
-                queens[queensEnd++]     = i;
+                queens.add(i);
                 break;
             case 6:
-                kings[kingsEnd++]       = i;
+                kings.add(i);
                 break;
             default:
                 break;
             }
         }
+
+        showPositions();
     }
 
     public BoardRecord copy() {
-        BoardRecord temp    = new BoardRecord();
+        BoardRecord tempRec = new BoardRecord();
+        
+        tempRec.board           = this.board.clone();
+        tempRec.epPawnPos       = this.epPawnPos;
+        tempRec.cRights         = this.cRights.clone();
+        tempRec.cRightsLocks    = this.cRightsLocks.clone();
+        tempRec.pawns           = this.pawns.copy();
+        tempRec.knights         = this.knights.copy();
+        tempRec.bishops         = this.bishops.copy();
+        tempRec.rooks           = this.rooks.copy();
+        tempRec.queens          = this.queens.copy();
+        tempRec.kings           = this.kings.copy();
+        tempRec.allPieces       = this.allPieces.copy();
+        tempRec.whiteAttacks    = this.whiteAttacks.clone();
+        tempRec.blackAttacks    = this.blackAttacks.clone();
 
-        temp.board          = this.board.clone();
-
-        temp.epPawnPos      = this.epPawnPos;
-        temp.cRights        = this.cRights.clone();
-        temp.cRightsLocks   = this.cRightsLocks.clone();
-
-        temp.pawns          = this.pawns.clone();
-        temp.knights        = this.knights.clone();
-        temp.bishops        = this.bishops.clone();
-        temp.rooks          = this.rooks.clone();
-        temp.queens         = this.queens.clone();
-        temp.kings          = this.kings.clone();
-        temp.allPieces      = this.allPieces.clone();
-        temp.movedPieces    = this.movedPieces.clone();
-        temp.whiteAttacks   = this.whiteAttacks.clone();
-        temp.blackAttacks   = this.blackAttacks.clone();
-
-        temp.pawnsEnd       = this.pawnsEnd;
-        temp.knightsEnd     = this.knightsEnd;
-        temp.bishopsEnd     = this.bishopsEnd;
-        temp.rooksEnd       = this.rooksEnd;
-        temp.queensEnd      = this.queensEnd;
-        temp.kingsEnd       = this.kingsEnd;
-        temp.allPiecesEnd   = this.allPiecesEnd;
-        temp.movedPiecesEnd = this.movedPiecesEnd;
-
-        return temp;
+        return tempRec;
     }
 
     public int minorPieceCount() {
-        return knightsEnd + bishopsEnd;
+        return (knights.length() + bishops.length());
     }
 
-    public void attacksArrAdd(int col, int pos) {
-        Piece colour = (col == Piece.WHITE.val()) ? Piece.WHITE : Piece.BLACK;
-        switch (colour) {
-        case WHITE:
-            whiteAttacks[pos]++;
-            break;
-        case BLACK:
-            blackAttacks[pos]++;
-            break;
-        default:
-            System.err.println("Bad colour at attack array add");
-            break;
-        }
+    public void removeAttack(Piece col, int pos) {
+        removeAttack(col.val(), pos);
     }
 
-    public void attacksArrRemove(int col, int pos) {
-        Piece colour = (col == Piece.WHITE.val()) ? Piece.WHITE : Piece.BLACK;
-        switch (colour) {
-        case WHITE:
+    public void removeAttack(int col, int pos) {
+        if (col == Piece.WHITE.val()) {
             whiteAttacks[pos]--;
-            break;
-        case BLACK:
+        } else {
             blackAttacks[pos]--;
-            break;
-        default:
-            System.err.println("Bad colour at attack array remove");
-            break;
         }
     }
 
-    public void movedArrAdd(int pos) {
-        movedPieces[movedPiecesEnd++] = pos;
+    public void addAttack(Piece col, int pos) {
+        addAttack(col.val(), pos);
     }
 
-    public void movedArrRemove(int pos) {
-        for (int i = 0; i < movedPiecesEnd - 1; i++) {
-            if (movedPieces[i] == pos) {
-                movedPiecesEnd--;
-                movedPieces[i] = movedPieces[movedPiecesEnd];
-                movedPieces[movedPiecesEnd] = -1;
-            }
+    public void addAttack(int col, int pos) {
+        if (col == Piece.WHITE.val()) {
+            whiteAttacks[pos]++;
+        } else {
+            blackAttacks[pos]++;
         }
     }
 
-    public void posArrAdd(int piece, int pos) { 
-        int[] movingArr;
-        int movingArrEnd;
-        switch (piece & 0b111) {
+    public void removePosition(Piece piece, int pos) {
+        removePosition(piece.val(), pos);
+    }
+
+    public void removePosition(int piece, int pos) {
+        if (piece > Piece.WHITE.val()) {
+            piece &= 0b111;
+        }
+        switch (piece) {
+        case 0:
+            break;
         case 1:
-            movingArr = pawns;
-            movingArrEnd = pawnsEnd++;
+            pawns.rem(pos);
             break;
         case 2:
-            movingArr = knights;
-            movingArrEnd = knightsEnd++;
+            knights.add(pos);
             break;
         case 3:
-            movingArr = bishops;
-            movingArrEnd = bishopsEnd++;
+            bishops.add(pos);
             break;
         case 4:
-            movingArr = rooks;
-            movingArrEnd = rooksEnd++;
+            rooks.add(pos);
             break;
         case 5:
-            movingArr = queens;
-            movingArrEnd = queensEnd++;
+            queens.add(pos);
             break;
         case 6:
-            movingArr = kings;
-            movingArrEnd = kingsEnd++;
+            kings.add(pos);
             break;
         default:
-            return;
+            System.err.println("Attempting to remove piece "+piece);
+            System.err.println("Could not remove piece position - piece invalid");
+            break;
+        } 
+    }
+
+    public void addPosition(Piece piece, int pos) {
+        addPosition(piece.val() & 0b111, pos);
+    }
+
+    public void addPosition(int piece, int pos) {
+        if (piece > Piece.WHITE.val()) {
+            piece &= 0b111;
         }
-
-        movingArr[movingArrEnd] = pos;
-        allPieces[allPiecesEnd++] = pos;
+        switch (piece) {
+        case 0:
+            break;
+        case 1:
+            pawns.add(pos);
+            break;
+        case 2:
+            knights.add(pos);
+            break;
+        case 3:
+            bishops.add(pos);
+            break;
+        case 4:
+            rooks.add(pos);
+            break;
+        case 5:
+            queens.add(pos);
+            break;
+        case 6:
+            kings.add(pos);
+            break;
+        default:
+            System.err.println("Attempting to save piece "+piece);
+            System.err.println("Could not add piece position - piece invalid");
+            break;
+        }   
     }
 
-    public void posArrReplace(int moving, int taken, int from, int to) {
-        posArrRemove(moving, from);
-        posArrAdd(moving, to);
-        posArrRemove(taken, to);
+    public void replacePosition(Piece moving, Piece taken, int from, int to) {
+        replacePosition(moving.val() & 0b111, taken.val() & 0b111, from, to);
     }
+
+    public void replacePosition(int moving, int taken, int from, int to) {
+        removePosition(moving, from);
+        addPosition(moving, to);
+        removePosition(taken, to);
+    }
+
     
-    public void posArrRemove(int piece, int pos) {
-        int[] movingArr;
-        int movingArrEnd;
-        switch (piece & 0b111) {
-        case 1:
-            movingArr = pawns;
-            movingArrEnd = --pawnsEnd;
-            break;
-        case 2:
-            movingArr = knights;
-            movingArrEnd = --knightsEnd;
-            break;
-        case 3:
-            movingArr = bishops;
-            movingArrEnd = --bishopsEnd;
-            break;
-        case 4:
-            movingArr = rooks;
-            movingArrEnd = --rooksEnd;
-            break;
-        case 5:
-            movingArr = queens;
-            movingArrEnd = --queensEnd;
-            break;
-        case 6:
-            movingArr = kings;
-            movingArrEnd = --kingsEnd;
-            break;
-        default:
-            return;
-        }
 
-        for (int i = 0; i < movingArrEnd + 1; i++) {
-            if (movingArr[i] == pos) {
-                movingArr[i] = movingArr[movingArrEnd];
-                movingArr[movingArrEnd] = -1;
-                break;
+    public void printBoard() {
+        for (int i = 0; i < board.length; i++) {
+            if (i % 8 == 0) {
+                System.out.println();
+            }
+            boolean isBlack = (board[i] & 0b11000) == Piece.BLACK.val();
+            switch (board[i] & 0b111) {
+                case 0:
+                    System.out.print(' ');
+                    break;
+                case 1:
+                    System.out.print((isBlack) ? 'p' : 'P');
+                    break;
+                case 2:
+                    System.out.print((isBlack) ? 'n' : 'N');
+                    break;
+                case 3:
+                    System.out.print((isBlack) ? 'b' : 'B');
+                    break;
+                case 4:
+                    System.out.print((isBlack) ? 'r' : 'R');
+                    break;
+                case 5:
+                    System.out.print((isBlack) ? 'q' : 'Q');
+                    break;
+                case 6:
+                    System.out.print((isBlack) ? 'k' : 'K');
+                    break;
+                default:
+                    break;
             }
         }
-        for (int i = 0; i < allPiecesEnd; i++) {
-            if (allPieces[i] == pos) {
-                allPiecesEnd--;
-                allPieces[i] = allPieces[allPiecesEnd];
-                allPieces[allPiecesEnd] = -1;
-                break;
-            }
-        }
+        System.out.println();
     }
- 
+
     public void showPositions() {
         char[] outArr = new char[64];
         for (int i = 0; i < 64; i++) {
             outArr[i] = ' ';
         }
-        for (int pos : pawns) {
+        for (int pos : pawns.elements) {
             if (pos == -1) {
                 break;
             }
             outArr[pos] = 'p';
         }
-        for (int pos : knights) {
+        for (int pos : knights.elements) {
             if (pos == -1) {
                 break;
             }
             outArr[pos] = 'n';
         }
-        for (int pos : bishops) {
+        for (int pos : bishops.elements) {
             if (pos == -1) {
                 break;
             }
             outArr[pos] = 'b';
         }
-        for (int pos : rooks) {
+        for (int pos : rooks.elements) {
             if (pos == -1) {
                 break;
             }
             outArr[pos] = 'r';
         }
-        for (int pos : queens) {
+        for (int pos : queens.elements) {
             if (pos == -1) {
                 break;
             }
             outArr[pos] = 'q';
         }
-        for (int pos : kings) {
+        for (int pos : kings.elements) {
             if (pos == -1) {
                 break;
             }
@@ -322,19 +305,22 @@ public class BoardRecord {
         }
         System.out.println();
 
-        // for (int i = 0; i < 64; i++) {
-        //     outArr[i] = ' ';
-        // }
-        // for (int i = 0; i < allPiecesEnd; i++) {
-        //     outArr[allPieces[i]] = 'x';
-        // }
-        // for (int i = 0; i < 64; i++) {
-        //     if (i % 8 == 0) {
-        //         System.out.println();
-        //     }
-        //     System.out.print(outArr[i]);
-        // }
-        // System.out.println();
+        for (int i = 0; i < 64; i++) {
+            outArr[i] = ' ';
+        }
+        for (int pos : allPieces.elements) {
+            if (pos == -1) {
+                break;
+            }
+            outArr[pos] = 'x';
+        }
+        for (int i = 0; i < 64; i++) {
+            if (i % 8 == 0) {
+                System.out.println();
+            }
+            System.out.print(outArr[i]);
+        }
+        System.out.println();
 
         for (int i = 0; i < 64; i++) {
             if (i % 8 == 0) {

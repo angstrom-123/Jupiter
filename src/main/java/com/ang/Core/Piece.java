@@ -20,4 +20,14 @@ public enum Piece {
     public int val() {
         return val;
     }
+
+    public Piece opposite() {
+        if (this == Piece.BLACK) {
+            return Piece.WHITE;
+        } else if (this == Piece.WHITE) {
+            return Piece.BLACK;
+        } else {
+            return Piece.NONE;
+        }
+    }
 }

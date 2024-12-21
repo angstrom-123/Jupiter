@@ -39,7 +39,7 @@ public class Board {
         doMove(tempRec, move, legal);
 
         int kingPos = -1;
-        for (int pos : tempRec.kings) {
+        for (int pos : tempRec.kings.elements) {
             if (pos == -1) {
                 break;
             }
@@ -82,7 +82,7 @@ public class Board {
 
     public static MoveList allMoves(BoardRecord rec, int col) {
         MoveList out = new MoveList(200);
-        for (int pos : rec.allPieces) {
+        for (int pos : rec.allPieces.elements) {
             if (pos == -1) {
                 break;
             }
@@ -112,7 +112,7 @@ public class Board {
                 break;
             case Flag.EN_PASSANT:
                 rec.board[rec.epPawnPos] = Piece.NONE.val();
-                rec.posArrRemove(Piece.PAWN.val(), rec.epPawnPos);
+                rec.removePosition(Piece.PAWN, rec.epPawnPos);
 
                 rec.epPawnPos = -1; 
                 break;
@@ -120,8 +120,7 @@ public class Board {
                 int shortR = move.from + 3;
                 rec.board[shortR]       = Piece.NONE.val();
                 rec.board[shortR - 2]   = Piece.ROOK.val() | col;
-                rec.posArrReplace(Piece.ROOK.val(), Piece.NONE.val(),
-                                  shortR, shortR - 2);
+                rec.replacePosition(Piece.ROOK, Piece.NONE, shortR, shortR - 2);
 
                 int shortRightsIndex = (col == Piece.WHITE.val()) ? 0 : 2;
                 rec.cRights[shortRightsIndex] = 0;
@@ -133,8 +132,7 @@ public class Board {
                 int longR = move.from + -4;
                 rec.board[longR]        = Piece.NONE.val();
                 rec.board[longR + 3]    = Piece.ROOK.val() | col;
-                rec.posArrReplace(Piece.ROOK.val(), Piece.NONE.val(), 
-                                  longR, longR + 3);
+                rec.replacePosition(Piece.ROOK, Piece.NONE, longR, longR + 3);
 
                 int longRightsIndex = (col == Piece.WHITE.val()) ? 1 : 3;
                 rec.cRights[longRightsIndex] = 0;
@@ -144,9 +142,9 @@ public class Board {
                 break;
             case Flag.PROMOTE:
                 rec.board[move.to] = Piece.QUEEN.val() | col;
-                rec.posArrRemove(piece, move.to);
-                rec.posArrAdd(Piece.QUEEN.val(), move.to);
-                rec.attacksArrRemove(col, move.to);
+                rec.removePosition(piece, move.to);
+                rec.addPosition(Piece.QUEEN, move.to);
+                rec.removeAttack(col, move.to);
 
                 rec.epPawnPos = -1; 
                 break;
@@ -173,7 +171,7 @@ public class Board {
         int     blackOffset     = -56;
 
         // king moved or in check
-        for (int pos : rec.kings) {
+        for (int pos : rec.kings.elements) {
             if (pos == -1) {
                 continue;
             }
@@ -311,7 +309,7 @@ public class Board {
         MoveList[] preWhiteAttacks = new MoveList[13];
         int preBlackEnd = 0;
         int preWhiteEnd = 0;
-        for (int pos : rec.allPieces) {
+        for (int pos : rec.allPieces.elements) {
             if (pos == -1) {
                 break;
             }
@@ -330,8 +328,7 @@ public class Board {
             MoveList ml = pieceMoves(rec, move.to);
             for (int i = 0; i < ml.length(); i++) {
                 if (ml.at(i).attack) {
-                    rec.attacksArrRemove(rec.board[move.to] & 0b11000, 
-                                         ml.at(i).to);
+                    rec.removeAttack(rec.board[move.to], ml.at(i).to);
                 }
             }
         } 
@@ -342,10 +339,8 @@ public class Board {
 
         rec.board[move.to] = rec.board[move.from];
         rec.board[move.from] = Piece.NONE.val();
-        rec.movedArrRemove(move.from);
-        rec.movedArrAdd(move.to);
-
-        rec.posArrReplace(moving & 0b111, taken & 0b111, move.from, move.to);
+        
+        rec.replacePosition(moving, taken, move.from, move.to);
 
         resolveFlags(rec, move, moving);
 
@@ -354,7 +349,7 @@ public class Board {
         MoveList[] postWhiteAttacks = new MoveList[13];
         int postBlackEnd = 0;
         int postWhiteEnd = 0;
-        for (int pos : rec.allPieces) {
+        for (int pos : rec.allPieces.elements) {
             if (pos == -1) {
                 break;
             }
@@ -373,7 +368,7 @@ public class Board {
                 break;
             }
             for (int i = 0; i < ml.length(); i++) {
-                rec.attacksArrRemove(Piece.WHITE.val(), ml.at(i).to);
+                rec.removeAttack(Piece.WHITE.val(), ml.at(i).to);
             }
         }
         for (MoveList ml : preBlackAttacks) {
@@ -381,7 +376,7 @@ public class Board {
                 break;
             }
             for (int i = 0; i < ml.length(); i++) {
-                rec.attacksArrRemove(Piece.BLACK.val(), ml.at(i).to);
+                rec.removeAttack(Piece.BLACK.val(), ml.at(i).to);
             }
         }
 
@@ -391,7 +386,7 @@ public class Board {
                 break;
             }
             for (int i = 0; i < ml.length(); i++) {
-                rec.attacksArrAdd(Piece.WHITE.val(), ml.at(i).to);
+                rec.addAttack(Piece.WHITE.val(), ml.at(i).to);
             }
         }
         for (MoveList ml : postBlackAttacks) {
@@ -399,7 +394,7 @@ public class Board {
                 break;
             }
             for (int i = 0; i < ml.length(); i++) {
-                rec.attacksArrAdd(Piece.BLACK.val(), ml.at(i).to);
+                rec.addAttack(Piece.BLACK.val(), ml.at(i).to);
             }
         }
 
@@ -408,7 +403,7 @@ public class Board {
             // removing all attacks from before move
             for (int i = 0; i < legalMoves.length(); i++) {
                 if (legalMoves.at(i).attack) {
-                    rec.attacksArrRemove(col, legalMoves.at(i).to);
+                    rec.addAttack(col, legalMoves.at(i).to);
                 }
             }
 
@@ -417,7 +412,7 @@ public class Board {
             for (int i = 0; i < newMoves.length(); i++) {
 
                 if (newMoves.at(i).attack) {
-                    rec.attacksArrAdd(col, newMoves.at(i).to); 
+                    rec.addAttack(col, newMoves.at(i).to); 
                 }
             } 
         }        

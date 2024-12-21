@@ -4,16 +4,39 @@ import com.ang.Core.Piece;
 import com.ang.Engine.Search;
 
 public class Main {
-    private final static int    SEARCH_MS       = 1000;
-    private final static Piece  ENGINE_COLOUR   = Piece.BLACK;
     private final static int    SQUARE_SIZE     = 45;
     private final static double RENDER_SCALE    = 1.2;
     
     public static void main(String[] args) {
-        final Search s = new Search(SEARCH_MS, ENGINE_COLOUR);
-        final Game g = new Game(SQUARE_SIZE, RENDER_SCALE);
+        switch (0) {
+        case 0: // player v engine
+            initGame(false);
+            break;
+        case 1: // testing move gen
+            initGame(true);
+            break;
+        case 2: // engine v engine
+            initEngineGame();        
+            break;
+        }
+    }
 
-        g.init(s);
-        // g.test();
+    private static void initGame(boolean test) {
+        Search s0 = new Search(1000, Piece.BLACK);
+        Game g = new Game(s0);
+        if (test) {
+            g.test(4000);
+        } else {
+            g.init(SQUARE_SIZE, RENDER_SCALE);
+        }
+    }
+
+    private static void initEngineGame() {
+        // strong engine
+        Search s0 = new Search(1000, Piece.BLACK, false, false, false);
+        // handicapped engine
+        Search s1 = new Search(1000, Piece.WHITE, true, true, true);
+        EngineGame eg = new EngineGame(s0, s1);
+        eg.init();
     }
 }

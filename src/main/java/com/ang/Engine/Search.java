@@ -22,8 +22,9 @@ import com.ang.Core.Moves.*;
 // TODO : fixes
 //      - bot doesn't find mate well in endgames, usually stalemate
 public class Search {  
+    public int      engineCol;
+
     private int     timeLimit;
-    private int     engineCol;
     private int     playerCol;
 
     private boolean useAlphaBeta        = true;
@@ -91,8 +92,8 @@ public class Search {
                         bestEval = eval;
                         bestMove = m;
 
-                        System.out.println("depth: " + maxDepth + " eval: " 
-                                + eval + " from: " + m.from+" to: " + m.to);
+                        // System.out.println("depth: " + maxDepth + " eval: " 
+                                // + eval + " from: " + m.from+" to: " + m.to);
                        
                     }
                 }
@@ -315,7 +316,7 @@ public class Search {
 
     private double evaluate(BoardRecord rec) {
         double eval = 0.0;
-        for (int pos : rec.allPieces) {
+        for (int pos : rec.allPieces.elements) {
             if (pos == -1) {
                 break;
             }
