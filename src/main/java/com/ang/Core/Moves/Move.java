@@ -30,7 +30,7 @@ public class Move {
     }
 
     public boolean isInvalid() {
-        return (from == -1) || (to == -1);
+        return ((from == -1) || (to == -1));
     }
 
     public static Move invalid() {

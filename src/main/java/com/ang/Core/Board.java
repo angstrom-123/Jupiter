@@ -18,9 +18,7 @@ public class Board {
             return false;
         }
 
-        int col = (rec.board[move.from] & 0b11000) == Piece.WHITE.val()
-        ? Piece.WHITE.val()
-        : Piece.BLACK.val();
+        int col = (rec.board[move.from] & 0b11000);
 
         MoveList legal = pieceMoves(rec, move.from);
         boolean legalMove = false;
@@ -179,17 +177,19 @@ public class Board {
                 if (isInCheck(rec, pos)) {
                     whiteCanShort   = false;
                     whiteCanLong    = false;
-                } else if (pos != 60) {
+                } 
+                if (pos != 60) {
                     whiteCanShort   = false;
                     whiteCanLong    = false;
                     lockWhiteShort  = true;
                     lockWhiteLong   = true;
                 }
-            } else {
+            } else { 
                 if (isInCheck(rec, pos)) {
                     blackCanShort   = false;
                     blackCanLong    = false;
-                } else if (pos != 4) {
+                } 
+                if (pos != 4) {
                     blackCanShort   = false;
                     blackCanLong    = false;
                     lockBlackShort  = true;
@@ -328,7 +328,7 @@ public class Board {
             MoveList ml = pieceMoves(rec, move.to);
             for (int i = 0; i < ml.length(); i++) {
                 if (ml.at(i).attack) {
-                    rec.removeAttack(rec.board[move.to], ml.at(i).to);
+                    rec.removeAttack(rec.board[move.to] & 0b11000, ml.at(i).to);
                 }
             }
         } 
@@ -398,12 +398,15 @@ public class Board {
             }
         }
 
-        // recalculate moving piece attacks, if it is sliding it's already done
+        // TODO : fix recalculating attacks, subtracting knight attacks from 
+        //          wrong side
+
+        // recalculate moving piece attacks, if it's sliding it's already done
         if (!isSlidingPiece(rec, move.to)) {
             // removing all attacks from before move
             for (int i = 0; i < legalMoves.length(); i++) {
                 if (legalMoves.at(i).attack) {
-                    rec.addAttack(col, legalMoves.at(i).to);
+                    rec.removeAttack(col, legalMoves.at(i).to);
                 }
             }
 
@@ -418,11 +421,12 @@ public class Board {
         }        
     }
 
-    private static boolean isUnderAttack(BoardRecord rec, int pos, int col) {        
+    public static boolean isUnderAttack(BoardRecord rec, int pos, int col) {        
         Piece pieceCol = (col == Piece.WHITE.val()) ? Piece.WHITE : Piece.BLACK;
         return isUnderAttack(rec, pos, pieceCol);
     }
-    private static boolean isUnderAttack(BoardRecord rec, int pos, Piece col) {
+
+    public static boolean isUnderAttack(BoardRecord rec, int pos, Piece col) {
         int[] attacks;
         switch (col) {
             case BLACK:
@@ -441,11 +445,11 @@ public class Board {
         return false;
     }
 
-    private static boolean isInCheck(BoardRecord rec, int pos) {
+    public static boolean isInCheck(BoardRecord rec, int pos) {
         return isUnderAttack(rec, pos, rec.board[pos] & 0b11000);
     }
 
-    private static boolean inBounds(int from, int offset) {
+    public static boolean inBounds(int from, int offset) {
         if ((from + offset > 63) || (from + offset) < 0) {
             return false;
         }

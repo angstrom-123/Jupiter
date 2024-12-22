@@ -30,4 +30,11 @@ public enum Piece {
             return Piece.NONE;
         }
     }
+
+    public static Piece opposite(int col) {
+        if (col == Piece.WHITE.val()) {
+            return Piece.BLACK;
+        }
+        return Piece.WHITE;
+    }
 }

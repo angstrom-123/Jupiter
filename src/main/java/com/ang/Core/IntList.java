@@ -39,10 +39,14 @@ public class IntList {
     }
 
     public void rem(int e) {
+        if (end == 0) {
+            System.err.println("Cannot remove from empty array - IntList.");
+            return;
+        }
         for (int i = 0; i < end; i++) {
             if (elements[i] == e) {
                 elements[i] = elements[--end];
-                elements[end--] = defaultVal;
+                elements[end] = defaultVal;
             }
         }
     }

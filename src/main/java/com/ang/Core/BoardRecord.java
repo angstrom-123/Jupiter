@@ -145,6 +145,7 @@ public class BoardRecord {
         if (piece > Piece.WHITE.val()) {
             piece &= 0b111;
         }
+        allPieces.rem(pos);
         switch (piece) {
         case 0:
             break;
@@ -152,19 +153,19 @@ public class BoardRecord {
             pawns.rem(pos);
             break;
         case 2:
-            knights.add(pos);
+            knights.rem(pos);
             break;
         case 3:
-            bishops.add(pos);
+            bishops.rem(pos);
             break;
         case 4:
-            rooks.add(pos);
+            rooks.rem(pos);
             break;
         case 5:
-            queens.add(pos);
+            queens.rem(pos);
             break;
         case 6:
-            kings.add(pos);
+            kings.rem(pos);
             break;
         default:
             System.err.println("Attempting to remove piece "+piece);
@@ -181,6 +182,7 @@ public class BoardRecord {
         if (piece > Piece.WHITE.val()) {
             piece &= 0b111;
         }
+        allPieces.add(pos);
         switch (piece) {
         case 0:
             break;
@@ -216,10 +218,10 @@ public class BoardRecord {
     public void replacePosition(int moving, int taken, int from, int to) {
         removePosition(moving, from);
         addPosition(moving, to);
-        removePosition(taken, to);
+        if (taken != Piece.NONE.val()) {
+            removePosition(taken, to);
+        }
     }
-
-    
 
     public void printBoard() {
         for (int i = 0; i < board.length; i++) {
@@ -326,7 +328,7 @@ public class BoardRecord {
             if (i % 8 == 0) {
                 System.out.println();
             }
-            System.out.print(whiteAttacks[i]);
+            System.out.print(whiteAttacks[i]+" ");
         }
         System.out.println();
 
@@ -334,7 +336,7 @@ public class BoardRecord {
             if (i % 8 == 0) {
                 System.out.println();
             }
-            System.out.print(blackAttacks[i]);
+            System.out.print(blackAttacks[i]+" ");
         }
         System.out.println();
 
