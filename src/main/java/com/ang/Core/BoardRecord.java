@@ -52,7 +52,7 @@ public class BoardRecord {
 
             allPieces.add(i);
             MoveList moves;
-            for (int j = 0; j < (moves = Board.pieceMoves(this, i)).length(); j++) {
+            for (int j = 0; j < (moves = PieceMover.moves(this, i)).length(); j++) {
                 if (moves.at(j).attack) {
                     if (isBlack) {
                         blackAttacks[moves.at(j).to]++;
@@ -231,25 +231,25 @@ public class BoardRecord {
             boolean isBlack = (board[i] & 0b11000) == Piece.BLACK.val();
             switch (board[i] & 0b111) {
                 case 0:
-                    System.out.print(' ');
+                    System.out.print("  ");
                     break;
                 case 1:
-                    System.out.print((isBlack) ? 'p' : 'P');
+                    System.out.print((isBlack) ? "p " : "P ");
                     break;
                 case 2:
-                    System.out.print((isBlack) ? 'n' : 'N');
+                    System.out.print((isBlack) ? "n " : "N ");
                     break;
                 case 3:
-                    System.out.print((isBlack) ? 'b' : 'B');
+                    System.out.print((isBlack) ? "b " : "B ");
                     break;
                 case 4:
-                    System.out.print((isBlack) ? 'r' : 'R');
+                    System.out.print((isBlack) ? "r " : "R ");
                     break;
                 case 5:
-                    System.out.print((isBlack) ? 'q' : 'Q');
+                    System.out.print((isBlack) ? "q " : "Q ");
                     break;
                 case 6:
-                    System.out.print((isBlack) ? 'k' : 'K');
+                    System.out.print((isBlack) ? "k " : "K ");
                     break;
                 default:
                     break;
@@ -259,71 +259,6 @@ public class BoardRecord {
     }
 
     public void showPositions() {
-        char[] outArr = new char[64];
-        for (int i = 0; i < 64; i++) {
-            outArr[i] = ' ';
-        }
-        for (int pos : pawns.elements) {
-            if (pos == -1) {
-                break;
-            }
-            outArr[pos] = 'p';
-        }
-        for (int pos : knights.elements) {
-            if (pos == -1) {
-                break;
-            }
-            outArr[pos] = 'n';
-        }
-        for (int pos : bishops.elements) {
-            if (pos == -1) {
-                break;
-            }
-            outArr[pos] = 'b';
-        }
-        for (int pos : rooks.elements) {
-            if (pos == -1) {
-                break;
-            }
-            outArr[pos] = 'r';
-        }
-        for (int pos : queens.elements) {
-            if (pos == -1) {
-                break;
-            }
-            outArr[pos] = 'q';
-        }
-        for (int pos : kings.elements) {
-            if (pos == -1) {
-                break;
-            }
-            outArr[pos] = 'k';
-        }
-        for (int i = 0; i < 64; i++) {
-            if (i % 8 == 0) {
-                System.out.println();
-            }
-            System.out.print(outArr[i]);
-        }
-        System.out.println();
-
-        for (int i = 0; i < 64; i++) {
-            outArr[i] = ' ';
-        }
-        for (int pos : allPieces.elements) {
-            if (pos == -1) {
-                break;
-            }
-            outArr[pos] = 'x';
-        }
-        for (int i = 0; i < 64; i++) {
-            if (i % 8 == 0) {
-                System.out.println();
-            }
-            System.out.print(outArr[i]);
-        }
-        System.out.println();
-
         for (int i = 0; i < 64; i++) {
             if (i % 8 == 0) {
                 System.out.println();
@@ -340,7 +275,9 @@ public class BoardRecord {
         }
         System.out.println();
 
+        printBoard();
+
         System.out.println();
-        System.out.println("ep pawn "+epPawnPos);
+        // System.out.println("ep pawn "+epPawnPos);
     }
 }

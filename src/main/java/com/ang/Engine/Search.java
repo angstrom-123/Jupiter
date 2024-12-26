@@ -6,9 +6,6 @@ import com.ang.Core.BoardRecord;
 import com.ang.Core.Piece;
 import com.ang.Core.Moves.*;
 
-// TODO : bugfix - engine can sometimes move player's pieces
-//          - (queen takes pawn, engine moves my queen);
-
 // TODO : compare move gen results to StockFish in random positions
 //      - need to allow engine to play as white and black
 //      - check that arbitrary board states are loaded and usable correctly
@@ -18,6 +15,7 @@ import com.ang.Core.Moves.*;
 //      - killer moves
 //      - pawn position evaluation
 //      - futility pruning
+//      - multithreading
 
 // TODO : fixes
 //      - bot doesn't find mate well in endgames, usually stalemate
@@ -92,8 +90,8 @@ public class Search {
                         bestEval = eval;
                         bestMove = m;
 
-                        // System.out.println("depth: " + maxDepth + " eval: " 
-                        //         + eval + " from: " + m.from+" to: " + m.to);
+                        System.out.println("depth: " + maxDepth + " eval: " 
+                                + eval + " from: " + m.from+" to: " + m.to);
                        
                     }
                 }
@@ -109,14 +107,9 @@ public class Search {
 
     private double negaMax(BoardRecord rec, int col, int depth) {
         if (depth == 0) {
-            return (col == Piece.WHITE.val()) 
-            ? evaluate(rec) 
-            : -evaluate(rec);
+            return evaluate(rec, col);
         }
 
-        int opCol = (col == Piece.WHITE.val()) 
-        ? Piece.BLACK.val() 
-        : Piece.WHITE.val();
         double bestEval = -Global.INFINITY;
 
         MoveList moves  = Board.allMoves(rec, col);
@@ -131,7 +124,7 @@ public class Search {
 
             BoardRecord tempRec = rec.copy();
             if (Board.tryMove(tempRec, move)) {
-                double eval = -negaMax(tempRec, opCol, depth - 1);
+                double eval = -negaMax(tempRec, Piece.opposite(col).val(), depth - 1);
                 if (eval > bestEval) {
                     bestEval = eval;
                     if (useTTable) {
@@ -166,9 +159,6 @@ public class Search {
             return quiesce(rec, alpha, beta, col);
         }
 
-        int opCol = (col == Piece.WHITE.val()) 
-        ? Piece.BLACK.val() 
-        : Piece.WHITE.val();
         double bestEval = -Global.INFINITY;
 
         MoveList moves  = Board.allMoves(rec, col);
@@ -184,7 +174,7 @@ public class Search {
             BoardRecord tempRec = rec.copy();
             if (Board.tryMove(tempRec, move)) {
                 double eval = -alphaBetaNega(tempRec, 
-                        -beta, -alpha, opCol, depth - 1);
+                        -beta, -alpha, Piece.opposite(col).val(), depth - 1);
                 if (eval > bestEval) {
                     bestEval = eval;
                     if (eval > alpha) {
@@ -232,8 +222,8 @@ public class Search {
 
     private double quiesce(BoardRecord rec, double alpha, double beta, int col) {
         double standPat = (col == Piece.WHITE.val()) 
-        ? evaluate(rec) 
-        : -evaluate(rec);
+        ? pieceValueEval(rec) 
+        : -pieceValueEval(rec);
 
         if (standPat > beta) { 
             return beta;
@@ -241,10 +231,6 @@ public class Search {
         if (alpha < standPat) {
             alpha = standPat;
         }
-
-        int opCol = col == Piece.WHITE.val()
-        ? Piece.BLACK.val()
-        : Piece.WHITE.val();
 
         MoveList moves  = Board.allMoves(rec, col);
         moves           = orderMoves(rec, moves, col);
@@ -260,7 +246,7 @@ public class Search {
 
             BoardRecord tempRec = rec.copy();
             if (Board.tryMove(tempRec, m)) {
-                double eval = -quiesce(tempRec, -beta, -alpha, opCol);
+                double eval = -quiesce(tempRec, -beta, -alpha, Piece.opposite(col).val());
                 if (eval >= beta) {
                     return beta;
                 }
@@ -310,11 +296,42 @@ public class Search {
         default:
             value = 0.0;
         }
-
         return (pieceCol == Piece.WHITE.val()) ? value : - value;
     }
 
-    private double evaluate(BoardRecord rec) {
+    // TODO : test this
+    private double endgameKingPosEval(BoardRecord rec, int friendlyCol) {
+        double eval = 0.0;
+        int whiteKingPos = Board.findKing(rec, Piece.WHITE);
+        int blackKingPos = Board.findKing(rec, Piece.BLACK);
+
+        int whiteRank = (int) Math.floor(whiteKingPos / 8);
+        int whiteFile = whiteKingPos % 8;
+        int blackRank = (int) Math.floor(blackKingPos / 8);
+        int blackFile = blackKingPos % 8;
+        
+        if (friendlyCol == Piece.WHITE.val()) {
+            int blackCentreDistRank = Math.max(3 - blackRank, blackRank - 4);
+            int blackCentreDistFile = Math.max(3 - blackFile, blackFile - 4); 
+            int blackCentreDist = blackCentreDistRank + blackCentreDistFile;
+            eval += blackCentreDist;
+        } else {
+            int whiteCentreDistRank = Math.max(3 - whiteRank, whiteRank - 4);
+            int whiteCentreDistFile = Math.max(3 - whiteFile, whiteFile - 4);
+            int whiteCentreDist = whiteCentreDistRank + whiteCentreDistFile;
+            eval += whiteCentreDist;
+        }
+
+        int rankSeperation = Math.abs(whiteRank - blackRank);
+        int fileSeperation = Math.abs(whiteFile - blackFile);
+        int kingSeperationSquared = (rankSeperation * rankSeperation) 
+                                  + (fileSeperation * fileSeperation);
+        eval += (128 - kingSeperationSquared);
+
+        return eval * 10;
+    }
+
+    private double pieceValueEval(BoardRecord rec) {
         double eval = 0.0;
         for (int pos : rec.allPieces.elements) {
             if (pos == -1) {
@@ -322,7 +339,16 @@ public class Search {
             }
             eval += pieceValue(rec, pos);
         }
+        return eval;
+    }
 
+    private double evaluate(BoardRecord rec, int currentCol) {
+        double eval = 0;
+        double pieceValEval = pieceValueEval(rec);
+        eval += (currentCol == Piece.WHITE.val()) ? pieceValEval : -pieceValEval;
+        if (rec.minorPieceCount() < 3) {
+            eval += endgameKingPosEval(rec, currentCol);
+        }
         return eval;
     }
 
@@ -335,7 +361,7 @@ public class Search {
                 moves.sendToFront(te.bestMove);
             }
         }
-        
+
         return moves;
     }
 }

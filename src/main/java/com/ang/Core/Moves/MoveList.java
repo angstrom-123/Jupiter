@@ -82,4 +82,16 @@ public class MoveList {
         }
         return false;
     }
+
+    public boolean containsMove(Move move) {
+        for (Move m : elements) {
+            if (m == null) {
+                return false;
+            }
+            if ((m.flag != Flag.ONLY_ATTACK) && (m.equals(move))) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

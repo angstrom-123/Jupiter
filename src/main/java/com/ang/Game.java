@@ -126,7 +126,7 @@ public class Game implements GameInterface {
 
             selected = -1;
 
-            gameBoard.showPositions(); // debug
+            // gameBoard.showPositions(); // debug
 
             Move engineMove = engineSearch.generateMove(gameBoard);
             if (!Board.tryMove(gameBoard, engineMove)) {
@@ -134,17 +134,20 @@ public class Game implements GameInterface {
                 return;  
             }
 
+            // playerCol = (playerCol == Piece.WHITE.val()) 
+            // ? Piece.BLACK.val() 
+            // : Piece.WHITE.val();
             playerCanMove = true;
 
             renderer.drawBoard();
             renderer.drawAllSprites(gameBoard);
 
-            gameBoard.showPositions(); // debug
+            // gameBoard.showPositions(); // debug
         }
     }
 
     private MoveList showMoves(int x, int y) {
-        MoveList moves = Board.pieceMoves(gameBoard, selected);   
+        MoveList moves = PieceMover.moves(gameBoard, selected);   
         for (int i = 0; i < moves.length(); i++) {
             if (moves.at(i).flag == Flag.ONLY_ATTACK) {
                 continue;
