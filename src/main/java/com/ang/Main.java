@@ -22,7 +22,7 @@ public class Main {
     }
 
     private static void initGame(boolean test) {
-        Search s0 = new Search(1000, Piece.BLACK);
+        Search s0 = new Search(1500, Piece.BLACK);
         Game g = new Game(s0);
         if (test) {
             g.test(4000);
@@ -32,9 +32,9 @@ public class Main {
     }
 
     private static void initEngineGame() {
-        // strong engine
+        // weak
         Search s0 = new Search(1000, Piece.BLACK, false, false, false);
-        // handicapped engine
+        // strong
         Search s1 = new Search(1000, Piece.WHITE, true, true, true);
         EngineGame eg = new EngineGame(s0, s1);
         eg.init();

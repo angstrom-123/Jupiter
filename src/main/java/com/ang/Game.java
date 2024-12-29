@@ -38,6 +38,7 @@ public class Game implements GameInterface {
         selected            = -1;
         legalMoves          = new MoveList(0);
         String startFEN     = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+        // String startFEN     = "3r4/3r4/3k4/8/8/3K4/8/8";
         gameBoard           = new BoardRecord(startFEN);
         renderer            = new Renderer(squareSize, renderScale, this);
 
@@ -115,34 +116,32 @@ public class Game implements GameInterface {
             legalMoves = showMoves(xCoord, yCoord);
         } else if (selected > -1) {
             Move playerMove = findMove(new Move(selected, pressed), legalMoves);
-            if (!Board.tryMove(gameBoard, playerMove)) {
+            if (Board.tryMove(gameBoard, playerMove)) {
+                Global.repTable.saveRepetition(gameBoard, playerCol);
+                playerCanMove = false;
+                selected = -1;
+
+                renderer.drawBoard();
+                renderer.drawAllSprites(gameBoard);
+                // gameBoard.showPositions(); // debug
+            } else {
                 System.err.println("Player did not make a valid move");
                 return;
             }
-            playerCanMove = false;
-
-            renderer.drawBoard();
-            renderer.drawAllSprites(gameBoard);
-
-            selected = -1;
-
-            // gameBoard.showPositions(); // debug
-
+            
             Move engineMove = engineSearch.generateMove(gameBoard);
-            if (!Board.tryMove(gameBoard, engineMove)) {
+            if (Board.tryMove(gameBoard, engineMove)) {
+                Global.repTable.saveRepetition(gameBoard, engineCol);
+                playerCanMove = true;
+
+                renderer.drawBoard();
+                renderer.drawAllSprites(gameBoard);
+                // gameBoard.showPositions(); // debug
+            } else {
                 System.err.println("Engine could not make a valid move");
-                return;  
+                return;
             }
 
-            // playerCol = (playerCol == Piece.WHITE.val()) 
-            // ? Piece.BLACK.val() 
-            // : Piece.WHITE.val();
-            playerCanMove = true;
-
-            renderer.drawBoard();
-            renderer.drawAllSprites(gameBoard);
-
-            // gameBoard.showPositions(); // debug
         }
     }
 

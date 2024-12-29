@@ -59,7 +59,9 @@ public class TranspositionTable {
         return h;
     }
 
-    // TODO : fix this
+    public void saveHash(TableEntry entry, BoardRecord rec, int moveCol) {
+        saveHash(entry, zobristHash(rec, moveCol));
+    }
     public void saveHash(TableEntry entry, int hash) {
         TableEntry oldEntry = searchTable(hash);
         if (oldEntry == null) {
