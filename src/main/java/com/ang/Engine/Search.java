@@ -6,15 +6,6 @@ import com.ang.Core.BoardRecord;
 import com.ang.Core.Piece;
 import com.ang.Core.Moves.*;
 
-//
-//
-//////////////////////////////////////////////////////////
-//
-// TODO : test speed of quiescence, make sure quiescence is working right
-//
-/////////////////////////////////////////////////////////
-//
-
 // TODO : compare move gen results to StockFish in random positions
 //      - need to allow engine to play as white and black
 //      - check that arbitrary board states are loaded and usable correctly
@@ -27,6 +18,8 @@ import com.ang.Core.Moves.*;
 //      - multithreading
 
 // TODO : fixes
+//      - test the transposition table / node types
+//      - fix repetition table
 //      - bot doesn't find mate well in endgames, usually stalemate -- Fixed? test!
 public class Search {  
     public int      engineCol;
@@ -34,11 +27,8 @@ public class Search {
     private int     timeLimit;
     private int     playerCol;
     private int     ttHits;
-
-    private boolean useAlphaBeta        = true;
-    private boolean useMoveOrdering     = true;
-    private boolean useTTable           = true;
-    private int     quiescenceDepth     = 2;
+    private int     maxDepth;
+    private long    endTime;
 
     public Search(int searchTime, Piece col) {
         this(searchTime, col.val());
@@ -48,17 +38,11 @@ public class Search {
         this.engineCol = col;
         this.playerCol = Piece.WHITE.val();
     }
-    public Search(int searchTime, Piece col, boolean ab, boolean mo, boolean tt) {
-        this(searchTime, col.val());
-        this.useAlphaBeta       = ab;
-        this.useMoveOrdering    = mo;
-        this.useTTable          = tt;
-    }
 
     public Move generateMove(BoardRecord rec) {
-        Move    lastPlyBestMove = Move.invalid();
-        int     maxDepth        = 1;
-        long    endTime         = System.currentTimeMillis() + timeLimit;
+        endTime = System.currentTimeMillis() + timeLimit;
+        Move lastPlyBestMove = Move.invalid();
+        maxDepth = 1;
         while (true) {
             Global.quiesces = 0;
             Global.searches = 0;
@@ -66,9 +50,7 @@ public class Search {
             double bestEval = -Global.INFINITY;
             Move bestMove = Move.invalid();         
             MoveList moves = Board.allMoves(rec, engineCol);
-            if (useMoveOrdering) {
-                moves = orderMoves(rec, moves, engineCol);
-            }
+            moves = orderMoves(rec, moves, engineCol);
             for (int i = 0; i < moves.length(); i++) {
                 if (System.currentTimeMillis() >= endTime) {
                     System.out.println("maximum complete depth: " 
@@ -87,12 +69,14 @@ public class Search {
                 
                 if (Board.tryMove(tempRec, m)) {
                     double eval;
-                    if (useAlphaBeta) {
+
+                    // repetitions
+                    if (Global.repTable.checkRepetitions(tempRec, Piece.NONE.val()) >= 3) {
+                        eval = 0.0; // draw by repetition
+                    } else {
                         eval = alphaBetaNega(tempRec, 
                                 -Global.INFINITY, Global.INFINITY, 
-                                playerCol, maxDepth);
-                    } else {
-                        eval = negaMax(tempRec, playerCol, maxDepth);
+                                playerCol, 0);
                     }
                     
                     if (engineCol == Piece.BLACK.val()) {
@@ -111,7 +95,7 @@ public class Search {
                 }
             }
 
-            if (bestMove.isInvalid()) {
+            if (bestMove.isInvalid()) { // TODO : checkmate / stalemate
                 return bestMove;
             }
             lastPlyBestMove = bestMove;
@@ -119,69 +103,24 @@ public class Search {
         }
     }
 
-    private double negaMax(BoardRecord rec, int col, int depth) {
-        Global.searches++;
-        if (depth == 0) {
-            return evaluate(rec, col);
-        }
-
-        double bestEval = -Global.INFINITY;
-
-        MoveList moves  = Board.allMoves(rec, col);
-        if (useMoveOrdering) {
-            moves = orderMoves(rec, moves, col);
-        }
-        for (int i = 0; i < moves.length(); i++) {
-            Move move = moves.at(i);
-            if (move.flag == Flag.ONLY_ATTACK) {
-                continue;
-            }
-
-            BoardRecord tempRec = rec.copy();
-            if (Board.tryMove(tempRec, move)) {
-                double eval = -negaMax(tempRec, Piece.opposite(col).val(), depth - 1);
-                if (eval > bestEval) {
-                    bestEval = eval;
-                    if (useTTable) {
-                        // save to transposition table
-                        TableEntry te = new TableEntry(SearchNode.PV, move, 
-                                eval, depth, 0);
-                        Global.tTable.saveHash(te, tempRec, col);
-                    }
-                }
-                if (useTTable) {
-                    // save to transposition table
-                    TableEntry te = new TableEntry(SearchNode.CUT, move, 
-                            eval, depth, 0);
-                    Global.tTable.saveHash(te, 
-                            Global.tTable.zobristHash(tempRec, col));
-                }
-            }
-        }
-        return bestEval;
-    }
-
     private double alphaBetaNega(BoardRecord rec, double alpha, double beta, 
             int col, int depth) {
         Global.searches++;
-        if (depth == 0) {
-            return quiesce(rec, alpha, beta, col, quiescenceDepth);
-        }
 
+        boolean foundMove = false;
         double bestEval = -Global.INFINITY;
 
+        if (depth == maxDepth) {
+            return quiesce(rec, alpha, beta, col, depth);
+        }
+
         MoveList moves  = Board.allMoves(rec, col);
-        if (moves.length() == 0) {
-            if (Board.isUnderAttack(rec, Board.findKing(rec, col), col)) {
-                System.out.println(col+" in checkmate");
-                return (col == engineCol) ? -Global.INFINITY : Global.INFINITY;
-            }
-            return 0.0; // stalemate
-        }
-        if (useMoveOrdering) {
-            moves = orderMoves(rec, moves, col);
-        }
+        moves = orderMoves(rec, moves, col);
         for (int i = 0; i < moves.length(); i++) {
+            if (System.currentTimeMillis() >= endTime) {
+                break;
+            }
+            foundMove = false;
             Move move = moves.at(i);
             if (move.flag == Flag.ONLY_ATTACK) {
                 continue;
@@ -189,37 +128,44 @@ public class Search {
 
             BoardRecord tempRec = rec.copy();
             if (Board.tryMove(tempRec, move)) {
+                foundMove = true;
                 double eval = -alphaBetaNega(tempRec, 
-                        -beta, -alpha, Piece.opposite(col).val(), depth - 1);
+                        -beta, -alpha, Piece.opposite(col).val(), depth + 1);
                 if (eval > bestEval) {
                     bestEval = eval;
                     if (eval > alpha) {
                         alpha = eval;
-                        if (useTTable) {
-                            // save to transposition table
-                            TableEntry te = new TableEntry(SearchNode.ALL, move, 
-                                    eval, depth, 0);
-                            Global.tTable.saveHash(te, tempRec, col);
-                        }
-                    } else if (useTTable) {
+                        // save to transposition table
+                        TableEntry te = new TableEntry(SearchNode.ALL, move, 
+                                eval, depth, 0);
+                        Global.tTable.saveHash(te, tempRec, col);
+                    } else { 
                         // save to transposition table
                         TableEntry te = new TableEntry(SearchNode.PV, move, 
                                 eval, depth, 0);
                         Global.tTable.saveHash(te, tempRec, col);
                     }
-                }
-                if (useTTable) {
+                } // TODO : test if saving the correct node type here
+                if (alpha >= beta) {
                     // save to transposition table
                     TableEntry te = new TableEntry(SearchNode.CUT, move, 
                             eval, depth, 0);
                     Global.tTable.saveHash(te, tempRec, col);
-                }
-                if (alpha >= beta) {
                     break;
                 }
             }
         }
 
+        if (!foundMove) {
+            int kingPos = Board.findKing(rec, col);
+            if (kingPos == -1) {
+                return 0.0;
+            }
+            if (Board.isUnderAttack(rec, kingPos, col)) {
+                return Global.INFINITY - depth * 10E300;
+            }
+            return 0.0;
+        } 
         return bestEval;
     }
 
@@ -227,11 +173,7 @@ public class Search {
             int col, int depth) {
         Global.quiesces++;
         double standPat = evaluate(rec, col);
-        double bestEval = standPat;
 
-        if (depth == 0) {
-            return standPat;
-        }
         if (standPat >= beta) { 
             return standPat;
         }
@@ -242,68 +184,66 @@ public class Search {
         MoveList moves = Board.allMoves(rec, col);
         moves = orderMoves(rec, moves, col);
         
-        if (moves.length() == 0) {
-            if (Board.isUnderAttack(rec, Board.findKing(rec, col), col)) {
-                System.out.println(col+" in checkmate");
-                return (col == engineCol) ? -Global.INFINITY : Global.INFINITY;
-            }
-            return 0.0; // stalemate
-        }
         for (int i = 0; i < moves.length(); i++) {
+            if (System.currentTimeMillis() >= endTime) {
+                return standPat;
+            }
             Move move = moves.at(i);
             if (move.flag == Flag.ONLY_ATTACK) {
                 continue;
             }
-            if (rec.board[move.to] == Piece.NONE.val()) {
-                continue;
-            }
+            
+            // heuristic cut-offs
+            
             int attackDelta = rec.whiteAttacks[move.to] - rec.blackAttacks[move.to];
-            if ((col == Piece.WHITE.val()) && (attackDelta < 0)) {
+            if ((col == Piece.WHITE.val()) && (attackDelta < 0) 
+                    && !Board.isPromotion(rec, move)) {
                 continue;
             } else if ((col == Piece.BLACK.val()) && (attackDelta > 0)) {
                 continue;
             }
-            
-            BoardRecord tempRec = rec.copy(); // TODO : engine sacs rook every time
-            if (Board.tryMove(tempRec, move)) { 
-                double eval = -quiesce(tempRec, -beta, -alpha, 
-                        Piece.opposite(col).val(), depth - 1);
+            if ((standPat + pieceValue(rec, move.to) + 200 < alpha)
+                    && (rec.minorPieceCount() > 2) && !Board.isPromotion(rec, move)) {
+                continue;
+            }
 
-                if (eval > bestEval) {
-                    bestEval = eval;
-                    if (eval > alpha) {
-                        alpha = eval;
-                        if (useTTable) {
-                            // save to transposition table
-                            TableEntry te = new TableEntry(SearchNode.ALL, move, 
-                                    eval, depth, 0);
-                            Global.tTable.saveHash(te, tempRec, col);
-                        }
-                    } else if (useTTable) {
-                        // save to transposition table
-                        TableEntry te = new TableEntry(SearchNode.PV, move, 
-                                eval, depth, 0);
-                        Global.tTable.saveHash(te, tempRec, col);
-                    }
+            BoardRecord tempRec = rec.copy(); // TODO : test that testing checks is working
+            if (Board.tryMove(tempRec, move)) { 
+                if ((rec.board[move.to] == Piece.NONE.val())
+                        && (!Board.isUnderAttack(rec, Board.findKing(rec, col), col))) {
+                    continue;
                 }
-                if (useTTable) {
-                    // save to transposition table
-                    TableEntry te = new TableEntry(SearchNode.CUT, move, 
+
+                double eval = -quiesce(tempRec, -beta, -alpha, 
+                        Piece.opposite(col).val(), depth + 1);
+
+                if (eval > alpha) {
+                    alpha = eval;
+                    TableEntry te = new TableEntry(SearchNode.ALL, move, 
+                            eval, depth, 0);
+                    Global.tTable.saveHash(te, tempRec, col);
+                    if (eval >= beta) {
+
+                        return beta;
+                    }
+                } else {
+                    TableEntry te = new TableEntry(SearchNode.PV, move, 
                             eval, depth, 0);
                     Global.tTable.saveHash(te, tempRec, col);
                 }
-                if (alpha >= beta) {
-                    break;
-                }
-            }
+            }   
         }
-        return bestEval;
+
+        if (Board.isMate(rec, col)) {
+            return -Global.INFINITY + (depth * 10E300);
+        }
+        return alpha;
     }
 
     private double pieceValue(BoardRecord rec, int pos) {
-        double value        = 0.0;
-        int pieceCol        = rec.board[pos] & 0b11000;
-        int heatmapIndex    = (pieceCol == Piece.WHITE.val()) ? pos : 63 - pos;
+        double value = 0.0;
+        int pieceCol = rec.board[pos] & 0b11000;
+        int heatmapIndex = (pieceCol == Piece.WHITE.val()) ? pos : 63 - pos;
 
         switch (rec.board[pos] & 0b111) {
         case 1:
@@ -334,12 +274,7 @@ public class Search {
         return (pieceCol == Piece.WHITE.val()) ? value : - value;
     }
 
-    // TODO : no incentive for engine to move king closer
-    // not attempt to deliver mate
-    //      - repetition table not working??
-    //      - depth too low in endgames
-    //      - incentive for rooks cornering king?
-    //      - incentive for checks?
+    // TODO : tune this
     private double endgameKingPosEval(BoardRecord rec, int currentCol) {
         double eval = 0.0;
         int whiteKingPos = Board.findKing(rec, Piece.WHITE);
@@ -396,15 +331,12 @@ public class Search {
     private MoveList orderMoves(BoardRecord rec, MoveList moves, int moveCol) {
         moves.attacksToFront();
 
-        if (useTTable) {
-            TableEntry te = Global.tTable.searchTable(
-                    Global.tTable.zobristHash(rec, moveCol));
-            if (te != null) { // tt hit
-                ttHits++;
-                moves.sendToFront(te.bestMove);
-            }
+        TableEntry te = Global.tTable.searchTable(
+                Global.tTable.zobristHash(rec, moveCol));
+        if (te != null) { // tt hit
+            ttHits++;
+            moves.sendToFront(te.bestMove);
         }
-
         return moves;
     }
 }

@@ -62,6 +62,59 @@ public class Board {
         return -1;
     }
 
+    public static boolean isUnderAttack(BoardRecord rec, int pos, Piece col) {
+        return isUnderAttack(rec, pos, col.val());
+    }
+    public static boolean isUnderAttack(BoardRecord rec, int pos, int col) {        
+        if (col == Piece.BLACK.val()) {
+            return (rec.whiteAttacks[pos] > 0);
+        } else if (col == Piece.WHITE.val()) {
+            return (rec.blackAttacks[pos] > 0);
+        }
+        return false;
+    }
+
+    public static boolean inBounds(int from, int offset) {
+        if ((from + offset > 63) || (from + offset) < 0) {
+            return false;
+        }
+
+        int posX = from % 8;
+        int posY = (int)Math.floor(from / 8);
+
+        int offsetX = (from + offset) % 8;
+        int offsetY = (int)Math.floor((from + offset) / 8);
+
+        int deltaX = offsetX - posX;
+        int deltaY = offsetY - posY;
+
+        // if the end coord is outside of a 5x5 grid centred on start, OOB
+        return !((Math.abs(deltaX) > 2) || (Math.abs(deltaY) > 2));
+    }
+
+    public static boolean isPromotion(BoardRecord rec, Move m) {
+        int piece = rec.board[m.from] & 0b111;
+        if (piece != Piece.PAWN.val()) {
+            return false;
+        }
+        if ((m.to > 55) || (m.to < 8)) {
+            return true;
+        }
+        return false;
+    }
+
+    public static boolean isMate(BoardRecord rec, int col) {
+        MoveList moves = allMoves(rec, col);
+        for (int i = 0; i < moves.length(); i++) {
+            Move m = moves.at(i);
+            BoardRecord tempRec = rec.copy();
+            if (tryMove(tempRec, m)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // private
 
     private static boolean isSlidingPiece(BoardRecord rec, int pos) {
@@ -385,35 +438,5 @@ public class Board {
                 }
             } 
         }        
-    }
-
-    public static boolean isUnderAttack(BoardRecord rec, int pos, Piece col) {
-        return isUnderAttack(rec, pos, col.val());
-    }
-    public static boolean isUnderAttack(BoardRecord rec, int pos, int col) {        
-        if (col == Piece.BLACK.val()) {
-            return (rec.whiteAttacks[pos] > 0);
-        } else if (col == Piece.WHITE.val()) {
-            return (rec.blackAttacks[pos] > 0);
-        }
-        return false;
-    }
-
-    public static boolean inBounds(int from, int offset) {
-        if ((from + offset > 63) || (from + offset) < 0) {
-            return false;
-        }
-
-        int posX = from % 8;
-        int posY = (int)Math.floor(from / 8);
-
-        int offsetX = (from + offset) % 8;
-        int offsetY = (int)Math.floor((from + offset) / 8);
-
-        int deltaX = offsetX - posX;
-        int deltaY = offsetY - posY;
-
-        // if the end coord is outside of a 5x5 grid centred on start, OOB
-        return !((Math.abs(deltaX) > 2) || (Math.abs(deltaY) > 2));
     }
 }

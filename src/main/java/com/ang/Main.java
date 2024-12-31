@@ -32,10 +32,8 @@ public class Main {
     }
 
     private static void initEngineGame() {
-        // weak
-        Search s0 = new Search(1000, Piece.BLACK, false, false, false);
-        // strong
-        Search s1 = new Search(1000, Piece.WHITE, true, true, true);
+        Search s0 = new Search(1000, Piece.BLACK);
+        Search s1 = new Search(1000, Piece.WHITE);
         EngineGame eg = new EngineGame(s0, s1);
         eg.init();
     }

@@ -77,27 +77,9 @@ public class Game implements GameInterface {
             Board.tryMove(testRecord, move);
         }
 
-        Search none = new Search(time, Piece.BLACK, false,  false,  false   );
-        Search ab   = new Search(time, Piece.BLACK, true,   false,  false   );
-        Search mo   = new Search(time, Piece.BLACK, false,  true,   false   );
-        Search tt   = new Search(time, Piece.BLACK, false,  true,   true    );
-        Search all  = new Search(time, Piece.BLACK);
-
-        System.out.println("none");
-        none.generateMove(testRecord);
-
-        System.out.println("ab");
-        ab.generateMove(testRecord);
-
-        System.out.println("mo");
-        mo.generateMove(testRecord);
-
-        System.out.println("tt");
-        tt.generateMove(testRecord);
-
-        System.out.println("all");
-        all.generateMove(testRecord);
-
+        Search s0  = new Search(time, Piece.BLACK);
+        System.out.println("test: ");
+        s0.generateMove(testRecord);
         System.out.println();
     }
 
@@ -116,22 +98,41 @@ public class Game implements GameInterface {
             legalMoves = showMoves(xCoord, yCoord);
         } else if (selected > -1) {
             Move playerMove = findMove(new Move(selected, pressed), legalMoves);
+            boolean playerTook = (gameBoard.board[playerMove.to] != Piece.NONE.val());
             if (Board.tryMove(gameBoard, playerMove)) {
-                Global.repTable.saveRepetition(gameBoard, playerCol);
+                if (((gameBoard.board[playerMove.to] & 0b111) != Piece.PAWN.val())
+                        && !playerTook) {
+                    Global.fiftyMoveCounter++;
+                }
+                if (Global.fiftyMoveCounter >= 75) {
+                    System.out.println("Fifty move draw");
+                    return;
+                }
+                Global.repTable.saveRepetition(gameBoard.copy(), Piece.NONE.val());
                 playerCanMove = false;
                 selected = -1;
 
                 renderer.drawBoard();
                 renderer.drawAllSprites(gameBoard);
                 // gameBoard.showPositions(); // debug
+
             } else {
                 System.err.println("Player did not make a valid move");
                 return;
             }
             
             Move engineMove = engineSearch.generateMove(gameBoard);
+            boolean engineTook = (gameBoard.board[engineMove.to] != Piece.NONE.val());
             if (Board.tryMove(gameBoard, engineMove)) {
-                Global.repTable.saveRepetition(gameBoard, engineCol);
+                if (((gameBoard.board[engineMove.to] & 0b111) != Piece.PAWN.val())
+                        && !engineTook) {
+                    Global.fiftyMoveCounter++;
+                }
+                if (Global.fiftyMoveCounter >= 75) {
+                    System.out.println("Fifty move draw");
+                    return;
+                }
+                Global.repTable.saveRepetition(gameBoard.copy(), Piece.NONE.val());
                 playerCanMove = true;
 
                 renderer.drawBoard();
@@ -141,7 +142,6 @@ public class Game implements GameInterface {
                 System.err.println("Engine could not make a valid move");
                 return;
             }
-
         }
     }
 
