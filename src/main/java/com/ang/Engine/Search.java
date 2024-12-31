@@ -8,7 +8,6 @@ import com.ang.Core.Moves.*;
 
 // TODO : compare move gen results to StockFish in random positions
 //      - need to allow engine to play as white and black
-//      - check that arbitrary board states are loaded and usable correctly
 
 // TODO : optimization:
 //      - history heuristic
@@ -19,8 +18,7 @@ import com.ang.Core.Moves.*;
 
 // TODO : fixes
 //      - test the transposition table / node types
-//      - fix repetition table
-//      - bot doesn't find mate well in endgames, usually stalemate -- Fixed? test!
+//      - bot doesn't find mate well in endgames, usually stalemate - Fixed? test!
 public class Search {  
     public int      engineCol;
 
@@ -145,8 +143,8 @@ public class Search {
                                 eval, depth, 0);
                         Global.tTable.saveHash(te, tempRec, col);
                     }
-                } // TODO : test if saving the correct node type here
-                if (alpha >= beta) {
+                }
+                if (eval >= beta) {
                     // save to transposition table
                     TableEntry te = new TableEntry(SearchNode.CUT, move, 
                             eval, depth, 0);
@@ -173,6 +171,7 @@ public class Search {
             int col, int depth) {
         Global.quiesces++;
         double standPat = evaluate(rec, col);
+        double bestEval = standPat;
 
         if (standPat >= beta) { 
             return standPat;
@@ -217,27 +216,33 @@ public class Search {
                 double eval = -quiesce(tempRec, -beta, -alpha, 
                         Piece.opposite(col).val(), depth + 1);
 
-                if (eval > alpha) {
-                    alpha = eval;
-                    TableEntry te = new TableEntry(SearchNode.ALL, move, 
-                            eval, depth, 0);
-                    Global.tTable.saveHash(te, tempRec, col);
-                    if (eval >= beta) {
-
-                        return beta;
+                if (eval > bestEval) {
+                    bestEval = eval;
+                    if (eval > alpha) {
+                        alpha = eval;
+                        // save to transposition table
+                        TableEntry te = new TableEntry(SearchNode.ALL, move, 
+                                eval, depth, 0);
+                        Global.tTable.saveHash(te, tempRec, col);
+                    } else { 
+                        // save to transposition table
+                        TableEntry te = new TableEntry(SearchNode.PV, move, 
+                                eval, depth, 0);
+                        Global.tTable.saveHash(te, tempRec, col);
                     }
-                } else {
-                    TableEntry te = new TableEntry(SearchNode.PV, move, 
+                }
+                if (eval >= beta) {
+                    // save to transposition table
+                    TableEntry te = new TableEntry(SearchNode.CUT, move, 
                             eval, depth, 0);
                     Global.tTable.saveHash(te, tempRec, col);
+                    break;
                 }
+
             }   
         }
 
-        if (Board.isMate(rec, col)) {
-            return -Global.INFINITY + (depth * 10E300);
-        }
-        return alpha;
+        return bestEval;
     }
 
     private double pieceValue(BoardRecord rec, int pos) {
