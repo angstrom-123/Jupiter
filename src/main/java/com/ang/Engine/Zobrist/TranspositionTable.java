@@ -18,7 +18,6 @@ public class TranspositionTable extends ZobristTable {
         super(781);
     }
 
-    @Override
     public int zobristHash(BoardRecord rec, int moveCol) {
         int h = 0;
         
@@ -67,9 +66,5 @@ public class TranspositionTable extends ZobristTable {
 
     public TableEntry searchTable(int hash) {
         return hashes.getOrDefault(hash, null);
-    }
-
-    public void handleCollision(TableEntry oldEntry, TableEntry newEntry, int hash) {
-        
     }
 }

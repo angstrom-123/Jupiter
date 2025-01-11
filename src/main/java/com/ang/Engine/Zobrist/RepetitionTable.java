@@ -13,8 +13,7 @@ public class RepetitionTable extends ZobristTable{
         super(768);  
     }
 
-    @Override
-    public int zobristHash(BoardRecord rec, int col) {
+    public int zobristHash(BoardRecord rec) {
         int h = 0;
         
         for (int i = 0; i < rec.board.length; i++) {
@@ -23,12 +22,11 @@ public class RepetitionTable extends ZobristTable{
                 h ^= zobristArray[indexOfPiece(piece, i)];
             }
         }
-
-        return h;
+        return h; 
     }
 
-    public int saveRepetition(BoardRecord rec, int moveCol) {
-        return saveRepetition(zobristHash(rec, moveCol));
+    public int saveRepetition(BoardRecord rec) {
+        return saveRepetition(zobristHash(rec));
     }
     public int saveRepetition(int hash) {
         int repCount = history.getOrDefault(hash, 0);
@@ -43,8 +41,8 @@ public class RepetitionTable extends ZobristTable{
         return repCount;
     }
 
-    public int checkRepetitions(BoardRecord rec, int moveCol) {
-        return checkRepetitions(zobristHash(rec, moveCol));
+    public int checkRepetitions(BoardRecord rec) {
+        return checkRepetitions(zobristHash(rec));
     }
     public int checkRepetitions(int hash) {
         return history.getOrDefault(hash, 0);

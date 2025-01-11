@@ -1,7 +1,6 @@
 package com.ang.Engine.Zobrist;
 
 import com.ang.Global;
-import com.ang.Core.BoardRecord;
 import com.ang.Core.Piece;
 
 public class ZobristTable {
@@ -14,10 +13,6 @@ public class ZobristTable {
         for (int i = 0; i < size; i++) {
             zobristArray[i] = (int) Global.pseudoRandom();
         }
-    }
-
-    public int zobristHash(BoardRecord rec, int moveCol) {
-        return 0;
     }
 
     protected int indexOfPiece(int piece, int pos) {

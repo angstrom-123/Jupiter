@@ -115,7 +115,7 @@ public class PieceMover {
 
         for (int move : offsets) {
             if (Board.inBounds(from, move)) {
-                if (!Board.isUnderAttack(rec, from + move, col) 
+                if (!Board.underAttack(rec, from + move, col) 
                         && ((rec.board[from + move] & 0b11000) != col)) {
                     moves.add(new Move(from, from + move));
                 } else {

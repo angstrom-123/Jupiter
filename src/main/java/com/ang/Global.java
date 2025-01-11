@@ -4,7 +4,8 @@ import com.ang.Engine.Zobrist.RepetitionTable;
 import com.ang.Engine.Zobrist.TranspositionTable;
 
 public class Global {
-    public final static double INFINITY = Double.MAX_VALUE;
+    public final static int INFINITY = Integer.MAX_VALUE;
+    public final static int LARGE_NUM = Integer.MAX_VALUE / 2;
 
     public static TranspositionTable tTable = new TranspositionTable();
     public static RepetitionTable repTable = new RepetitionTable();

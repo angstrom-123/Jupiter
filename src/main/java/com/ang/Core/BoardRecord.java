@@ -18,6 +18,19 @@ public class BoardRecord {
     public IntList  queens;
     public IntList  kings;
     public IntList  allPieces;
+
+    public int[]    whiteAttacksP;
+    public int[]    whiteAttacksN;
+    public int[]    whiteAttacksB;
+    public int[]    whiteAttacksR;
+    public int[]    whiteAttacksQ;
+    public int[]    whiteAttacksK;
+    public int[]    blackAttacksP;
+    public int[]    blackAttacksN;
+    public int[]    blackAttacksB;
+    public int[]    blackAttacksR;
+    public int[]    blackAttacksQ;
+    public int[]    blackAttacksK;
     public int[]    whiteAttacks;
     public int[]    blackAttacks;
 
@@ -38,6 +51,19 @@ public class BoardRecord {
         queens          = new IntList(18, -1);
         kings           = new IntList( 2, -1);
         allPieces       = new IntList(64, -1);
+
+        whiteAttacksP   = new int[64];
+        whiteAttacksN   = new int[64];
+        whiteAttacksB   = new int[64];
+        whiteAttacksR   = new int[64];
+        whiteAttacksQ   = new int[64];
+        whiteAttacksK   = new int[64];
+        blackAttacksP   = new int[64];
+        blackAttacksN   = new int[64];
+        blackAttacksB   = new int[64];
+        blackAttacksR   = new int[64];
+        blackAttacksQ   = new int[64];
+        blackAttacksK   = new int[64];
         whiteAttacks    = new int[64];
         blackAttacks    = new int[64];
 
@@ -47,18 +73,15 @@ public class BoardRecord {
     private void initLists() {
         for (int i = 0; i < board.length; i++) {
             int piece = board[i];
-            boolean isBlack = (piece & 0b11000) == Piece.BLACK.val();
+            // boolean isBlack = (piece & 0b11000) == Piece.BLACK.val();
             if (piece == Piece.NONE.val()) { continue; }
 
             allPieces.add(i);
             MoveList moves;
             for (int j = 0; j < (moves = PieceMover.moves(this, i)).length(); j++) {
-                if (moves.at(j).attack) {
-                    if (isBlack) {
-                        blackAttacks[moves.at(j).to]++;
-                    } else {
-                        whiteAttacks[moves.at(j).to]++;
-                    }
+                Move m = moves.at(j);
+                if (m.attack) {
+                    addAttack(piece, m.to);
                 }
             }
 
@@ -103,6 +126,19 @@ public class BoardRecord {
         tempRec.queens          = this.queens.copy();
         tempRec.kings           = this.kings.copy();
         tempRec.allPieces       = this.allPieces.copy();
+        tempRec.whiteAttacksP   = this.whiteAttacksP.clone();
+        tempRec.whiteAttacksN   = this.whiteAttacksN.clone();
+        tempRec.whiteAttacksB   = this.whiteAttacksB.clone();
+        tempRec.whiteAttacksR   = this.whiteAttacksR.clone();
+        tempRec.whiteAttacksQ   = this.whiteAttacksQ.clone();
+        tempRec.whiteAttacksK   = this.whiteAttacksK.clone();
+        tempRec.blackAttacksP   = this.blackAttacksP.clone();
+        tempRec.blackAttacksN   = this.blackAttacksN.clone();
+        tempRec.blackAttacksB   = this.blackAttacksB.clone();
+        tempRec.blackAttacksR   = this.blackAttacksR.clone();
+        tempRec.blackAttacksQ   = this.blackAttacksQ.clone();
+        tempRec.blackAttacksK   = this.blackAttacksK.clone();
+
         tempRec.whiteAttacks    = this.whiteAttacks.clone();
         tempRec.blackAttacks    = this.blackAttacks.clone();
 
@@ -113,34 +149,82 @@ public class BoardRecord {
         return (knights.length() + bishops.length());
     }
 
-    public void removeAttack(Piece col, int pos) {
-        removeAttack(col.val(), pos);
+    public void removeAttack(Piece piece, int pos) {
+        removeAttack(piece.val(), pos);
+    }
+    public void removeAttack(int piece, int pos) {
+        changeAttack(piece, pos, -1);
     }
 
-    public void removeAttack(int col, int pos) {
-        if (col == Piece.WHITE.val()) {
-            whiteAttacks[pos]--;
-        } else {
-            blackAttacks[pos]--;
+    public void addAttack(Piece piece, int pos) {
+        addAttack(piece.val(), pos);
+    }
+    public void addAttack(int piece, int pos) {
+        changeAttack(piece, pos, 1);
+    }
+
+    // TODO : visualize all attacks for all pieces to test new add / remove funcs
+
+    private void changeAttack(int piece, int pos, int delta) {
+        boolean isBlack = (piece & 0b11000) == Piece.BLACK.val();
+        int type = piece & 0b111;
+        
+        switch (type) {
+        case 1:
+            if (isBlack) {
+                blackAttacksP[pos] += delta;
+            } else {
+                whiteAttacksP[pos] += delta;
+            }
+            break;
+        case 2:
+            if (isBlack) {
+                blackAttacksN[pos] += delta;
+            } else {
+                whiteAttacksN[pos] += delta;
+            }
+            break;
+        case 3:
+            if (isBlack) {
+                blackAttacksB[pos] += delta;
+            } else {
+                whiteAttacksB[pos] += delta;
+            }
+            break;
+        case 4:
+            if (isBlack) {
+                blackAttacksR[pos] += delta;
+            } else {
+                whiteAttacksR[pos] += delta;
+            }
+            break;
+        case 5:
+            if (isBlack) {
+                blackAttacksQ[pos] += delta;
+            } else {
+                whiteAttacksQ[pos] += delta;
+            }
+            break;
+        case 6:
+            if (isBlack) {
+                blackAttacksK[pos] += delta;
+            } else {
+                whiteAttacksK[pos] += delta;
+            }
+            break;
+        default:
+            return;
         }
-    }
-
-    public void addAttack(Piece col, int pos) {
-        addAttack(col.val(), pos);
-    }
-
-    public void addAttack(int col, int pos) {
-        if (col == Piece.WHITE.val()) {
-            whiteAttacks[pos]++;
+        if (isBlack) {
+            blackAttacks[pos] += delta;
         } else {
-            blackAttacks[pos]++;
+            whiteAttacks[pos] += delta;
         }
     }
 
     public void removePosition(Piece piece, int pos) {
         removePosition(piece.val(), pos);
     }
-
     public void removePosition(int piece, int pos) {
         if (piece > Piece.WHITE.val()) {
             piece &= 0b111;
@@ -231,7 +315,7 @@ public class BoardRecord {
             boolean isBlack = (board[i] & 0b11000) == Piece.BLACK.val();
             switch (board[i] & 0b111) {
                 case 0:
-                    System.out.print("  ");
+                    System.out.print(". ");
                     break;
                 case 1:
                     System.out.print((isBlack) ? "p " : "P ");
@@ -279,5 +363,122 @@ public class BoardRecord {
 
         System.out.println();
         // System.out.println("ep pawn "+epPawnPos);
+    }
+
+    public void showAttacks() {
+        System.out.println();
+        System.out.println();
+        System.out.println("Pawns");
+        System.out.println("White");
+        for (int i = 0; i < 64; i++) {
+            if (i % 8 == 0) {
+                System.out.println();
+            }
+            System.out.print(this.whiteAttacksP[i] + " ");
+        }
+        System.out.println();
+        System.out.println("Black");
+        for (int i = 0; i < 64; i++) {
+            if (i % 8 == 0) {
+                System.out.println();
+            }
+            System.out.print(this.blackAttacksP[i] + " ");
+        }
+
+        System.out.println();
+        System.out.println();
+        System.out.println("Knights");
+        System.out.println("White");
+        for (int i = 0; i < 64; i++) {
+            if (i % 8 == 0) {
+                System.out.println();
+            }
+            System.out.print(this.whiteAttacksN[i] + " ");
+        }
+        System.out.println();
+        System.out.println("Black");
+        for (int i = 0; i < 64; i++) {
+            if (i % 8 == 0) {
+                System.out.println();
+            }
+            System.out.print(this.blackAttacksN[i] + " ");
+        }
+
+        System.out.println();
+        System.out.println();
+        System.out.println("Bishops");
+        System.out.println("White");
+        for (int i = 0; i < 64; i++) {
+            if (i % 8 == 0) {
+                System.out.println();
+            }
+            System.out.print(this.whiteAttacksB[i] + " ");
+        }
+        System.out.println("Black");
+        System.out.println();
+        for (int i = 0; i < 64; i++) {
+            if (i % 8 == 0) {
+                System.out.println();
+            }
+            System.out.print(this.blackAttacksB[i] + " ");
+        }
+
+        System.out.println();
+        System.out.println();
+        System.out.println("Rooks");
+        System.out.println("White");
+        for (int i = 0; i < 64; i++) {
+            if (i % 8 == 0) {
+                System.out.println();
+            }
+            System.out.print(this.whiteAttacksR[i] + " ");
+        }
+        System.out.println("Black");
+        System.out.println();
+        for (int i = 0; i < 64; i++) {
+            if (i % 8 == 0) {
+                System.out.println();
+            }
+            System.out.print(this.blackAttacksR[i] + " ");
+        }
+
+        System.out.println();
+        System.out.println();
+        System.out.println("Queens");
+        System.out.println("White");
+        for (int i = 0; i < 64; i++) {
+            if (i % 8 == 0) {
+                System.out.println();
+            }
+            System.out.print(this.whiteAttacksQ[i] + " ");
+        }
+        System.out.println("Black");
+        System.out.println();
+        for (int i = 0; i < 64; i++) {
+            if (i % 8 == 0) {
+                System.out.println();
+            }
+            System.out.print(this.blackAttacksQ[i] + " ");
+        }
+
+        System.out.println();
+        System.out.println();
+        System.out.println("Kings");
+        System.out.println("White");
+        for (int i = 0; i < 64; i++) {
+            if (i % 8 == 0) {
+                System.out.println();
+            }
+            System.out.print(this.whiteAttacksK[i] + " ");
+        }
+        System.out.println("Black");
+        System.out.println();
+        for (int i = 0; i < 64; i++) {
+            if (i % 8 == 0) {
+                System.out.println();
+            }
+            System.out.print(this.blackAttacksK[i] + " ");
+        }
+        System.out.println();
     }
 }
