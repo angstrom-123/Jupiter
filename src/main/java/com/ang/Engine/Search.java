@@ -1,9 +1,7 @@
 package com.ang.Engine;
 
 import com.ang.Global;
-import com.ang.Core.Board;
-import com.ang.Core.BoardRecord;
-import com.ang.Core.Piece;
+import com.ang.Core.*;
 import com.ang.Core.Moves.*;
 
 // TODO : compare move gen results to StockFish in random positions
@@ -216,6 +214,11 @@ public class Search {
             }
             
             // heuristic cut-offs
+
+            // TODO : test
+            if (staticExchangeEvaluation(rec, move.to, col) == SEEResult.LOSING) {
+                continue;
+            }
             
             if ((standPat + pieceValues(rec, move.to) + 200 < alpha)
                     && (rec.minorPieceCount() > 2) && !Board.isPromotion(rec, move)) {
@@ -289,26 +292,26 @@ public class Search {
 
         switch (rec.board[pos] & 0b111) {
         case 1:
-            value = 100 + Heatmap.pawnMap[heatmapIndex];
+            value = Piece.PAWN.staticEval() + Heatmap.pawnMap[heatmapIndex];
             break;
         case 2:
-            value = 320 + Heatmap.pawnMap[heatmapIndex];
+            value = Piece.KNIGHT.staticEval() + Heatmap.pawnMap[heatmapIndex];
             break;
         case 3:
-            value = 330 + Heatmap.pawnMap[heatmapIndex];
+            value = Piece.BISHOP.staticEval() + Heatmap.pawnMap[heatmapIndex];
             break;
         case 4:
-            value = 500 + Heatmap.pawnMap[heatmapIndex];
+            value = Piece.ROOK.staticEval() + Heatmap.pawnMap[heatmapIndex];
             break;
         case 5:
-            value = 900 + Heatmap.pawnMap[heatmapIndex];
+            value = Piece.QUEEN.staticEval() + Heatmap.pawnMap[heatmapIndex];
             break;
         case 6:
             // king heatmap changes in endgame
             int[] heatmap = (rec.minorPieceCount() < 3)
             ? Heatmap.kingEndMap
             : Heatmap.kingStartMap;
-            value = 20000 + heatmap[heatmapIndex];
+            value = Piece.KING.staticEval() + heatmap[heatmapIndex];
             break;
         default:
             value = 0;
@@ -356,6 +359,95 @@ public class Search {
         }
 
         return eval;
+    }
+
+    private SEEResult staticExchangeEvaluation(BoardRecord rec, int pos, int currentCol) {
+        int eval = 0;
+        int initCapVal = Board.pieceInSquare(rec, pos).staticEval();
+
+        int[] friendlyExchVals = exchangeValues(rec, pos, currentCol);
+        int[] enemyExchVals = exchangeValues(rec, pos, Piece.opposite(currentCol).val());
+        if (friendlyExchVals.length == 0) return SEEResult.EQUAL;
+        if (enemyExchVals.length == 0) return SEEResult.WINNING;
+
+        int friendlyIndex = 0;
+        int enemyIndex = 0;
+
+        eval += initCapVal - friendlyExchVals[friendlyIndex++];
+        if (eval < 0) return SEEResult.LOSING;
+        while (true) {
+            if ((friendlyIndex == friendlyExchVals.length)
+                    || (enemyIndex == enemyExchVals.length)) {
+                int diff = friendlyExchVals.length - enemyExchVals.length;
+                if (diff > 0) return SEEResult.WINNING;
+                if (diff < 0) return SEEResult.LOSING;
+                return SEEResult.EQUAL;
+            }
+
+            eval += friendlyExchVals[friendlyIndex++] - enemyExchVals[enemyIndex++];
+            if (eval < 0) return SEEResult.LOSING;
+            if (eval > 0) return SEEResult.WINNING;
+        }
+    }
+
+    private int[] exchangeValues(BoardRecord rec, int pos, int col) {
+        int[] out;
+
+        int pawns   = 0;
+        int knights = 0;
+        int bishops = 0;
+        int rooks   = 0;
+        int queens  = 0;
+        int kings   = 0;
+        int len     = 0;
+
+        if (col == Piece.WHITE.val()) {
+            pawns   = rec.whiteAttacksP[pos];
+            knights = rec.whiteAttacksN[pos];
+            bishops = rec.whiteAttacksB[pos];
+            rooks   = rec.whiteAttacksR[pos];
+            queens  = rec.whiteAttacksQ[pos];
+            kings   = rec.whiteAttacksK[pos];
+            len     = rec.whiteAttacks[pos];
+        } else {
+            pawns   = rec.blackAttacksP[pos];
+            knights = rec.blackAttacksN[pos];
+            bishops = rec.blackAttacksB[pos];
+            rooks   = rec.blackAttacksR[pos];
+            queens  = rec.blackAttacksQ[pos];
+            kings   = rec.blackAttacksK[pos];
+            len     = rec.blackAttacks[pos];
+        }
+
+        if (len == -1) {
+            System.out.println("failure");
+            rec.showPositions();
+        }
+        out = new int[len];
+
+        for (int i = 0; i < out.length; i++) {
+            if (pawns > 0) {
+                out[i] = Piece.PAWN.staticEval();
+                pawns--;
+            } else if (knights > 0) {
+                out[i] = Piece.KNIGHT.staticEval();
+                knights--;
+            } else if (bishops > 0) {
+                out[i] = Piece.BISHOP.staticEval();
+                bishops--;
+            } else if (rooks > 0) {
+                out[i] = Piece.ROOK.staticEval();
+                rooks--;
+            } else if (queens > 0) {
+                out[i] = Piece.QUEEN.staticEval();
+                queens--;
+            } else if (kings > 0) {
+                out[i] = Piece.KING.staticEval();
+                kings--;
+            }
+        }
+
+        return out;
     }
 
     private int pieceValueEval(BoardRecord rec) {

@@ -1,24 +1,30 @@
 package com.ang.Core;
 
 public enum Piece {
-    NONE    ( 0),
-    PAWN    ( 1),
-    KNIGHT  ( 2),
-    BISHOP  ( 3),
-    ROOK    ( 4),
-    QUEEN   ( 5),
-    KING    ( 6),
-    WHITE   ( 8),
-    BLACK   (16);
+    NONE    ( 0, 0),
+    PAWN    ( 1, 100),
+    KNIGHT  ( 2, 320),
+    BISHOP  ( 3, 330),
+    ROOK    ( 4, 500),
+    QUEEN   ( 5, 900),
+    KING    ( 6, 20000),
+    WHITE   ( 8, 0),
+    BLACK   (16, 0);
 
     private int val;
+    private int staticEval;
 
-    private Piece (int val) {
+    private Piece (int val, int staticEval) {
         this.val = val;
+        this.staticEval = staticEval;
     }
 
     public int val() {
         return val;
+    }
+
+    public int staticEval() {
+        return staticEval;
     }
 
     public Piece opposite() {

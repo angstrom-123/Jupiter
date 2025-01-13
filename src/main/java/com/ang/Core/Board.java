@@ -4,10 +4,6 @@ import com.ang.Global;
 import com.ang.Core.Moves.*;
 import com.ang.Engine.EndState;
 
-// TODO : bugfix - Piece attacks sometimes go negative (especially near king moves)
-//          - King attacks not tracking correctly, eg rook next to king has 0
-//              in this case when the king moves away the number goes negative
-
 public class Board {
     // public
     public static boolean tryMove(BoardRecord rec, Move move) {
@@ -140,6 +136,25 @@ public class Board {
                 && (rec.queens.length() == 0);
     }
 
+    public static Piece pieceInSquare(BoardRecord rec, int pos) {
+        switch (rec.board[pos] & 0b111) {
+        case 1:
+            return Piece.PAWN;
+        case 2:
+            return Piece.KNIGHT;
+        case 3:
+            return Piece.BISHOP;
+        case 4:
+            return Piece.ROOK;
+        case 5:
+            return Piece.QUEEN;
+        case 6:
+            return Piece.KING;
+        default:
+            return Piece.NONE;
+        }
+    }
+
     // private
 
     private static boolean isSlidingPiece(BoardRecord rec, int pos) {
@@ -150,7 +165,7 @@ public class Board {
                 return false;
         }
     }
-    // TODO : test all add / remove attacks for individual pieces
+
     private static void resolveFlags(BoardRecord rec, Move move, int piece) {
         int col = piece & 0b11000;
         switch (move.flag) {
@@ -379,119 +394,66 @@ public class Board {
     }
 
     private static void makeMove(BoardRecord rec, Move move, MoveList legalMoves) {        
-        MoveList preBlackAttacks = new MoveList(300);
-        MoveList preWhiteAttacks = new MoveList(300);
-        for (int pos : rec.allPieces.elements) {
-            if (pos == -1) {
-                break;
-            }
-            // calculate attacks for sliding pieces before move
-            if (isSlidingPiece(rec, pos)) {
-                if ((rec.board[pos] & 0b11000) == Piece.WHITE.val()) {
-                    preWhiteAttacks.add(PieceMover.moves(rec, pos));
-                } else {
-                    preBlackAttacks.add(PieceMover.moves(rec, pos));
-                }
-            }
-        }
-
-        // recalculate attacks of taken piece, if sliding then already done
-        if (!isSlidingPiece(rec, move.to)) {
-            MoveList ml = PieceMover.moves(rec, move.to);
-            for (int i = 0; i < ml.length(); i++) {
-                if (ml.at(i).attack) {
-                    rec.removeAttack(rec.board[move.to], ml.at(i).to);
-                    // rec.removeAttack(rec.board[move.to] & 0b11000, ml.at(i).to);
-                }
-            }
-        } 
-        
         int moving = rec.board[move.from];
         int taken = rec.board[move.to];
-        // int col = moving & 0b11000;
+    
+        // remove piece attacks prior to move for recalculation
+        for (int pos : rec.allPieces.elements) {
+            if (pos == -1) break;
 
+            if (pos == move.from) { // remove attacks of moving piece
+                for (int i = 0; i < legalMoves.length(); i++) {
+                    Move m = legalMoves.at(i);
+                    if (m.attack) {
+                        rec.removeAttack(moving, m.to);
+                    }
+                }
+            } else if (pos == move.to) { // remove attacks of taken piece
+                MoveList takenMoves = PieceMover.moves(rec, pos);
+                for (int i = 0; i < takenMoves.length(); i++) {
+                    Move m = takenMoves.at(i);
+                    if (m.attack) {
+                        rec.removeAttack(taken, m.to);
+                    }
+                }   
+            } else if (isSlidingPiece(rec, pos)) { // remove attacks of sliding pieces
+                MoveList slidingMoves = PieceMover.moves(rec, pos);
+                for (int i = 0; i < slidingMoves.length(); i++) {
+                    Move m = slidingMoves.at(i);
+                    if (m.attack) {
+                        rec.removeAttack(rec.board[pos], m.to);
+                    }
+                }
+            }
+        }   
+    
         rec.board[move.to] = rec.board[move.from];
         rec.board[move.from] = Piece.NONE.val();
         rec.replacePosition(moving, taken, move.from, move.to);
         
         resolveFlags(rec, move, moving);
 
-        MoveList postBlackAttacks = new MoveList(300);
-        MoveList postWhiteAttacks = new MoveList(300);
+        // recalculate piece attacks after move
         for (int pos : rec.allPieces.elements) {
-            if (pos == -1) {
-                break;
-            }
-            if (isSlidingPiece(rec, pos)) {
-                if ((rec.board[pos] & 0b11000) == Piece.WHITE.val()) {
-                    postWhiteAttacks.add(PieceMover.moves(rec, pos));
-                } else {
-                    postBlackAttacks.add(PieceMover.moves(rec, pos));
-                }
-            }
-        }
+            if (pos == -1) break;
 
-        // remove all sliding piece attacks from before move
-        for (int i = 0; i < preWhiteAttacks.length(); i++) {
-            Move m = preWhiteAttacks.at(i);
-            if (m == null) {
-                break;
-            }
-            if (m.from == move.from) {
-                rec.removeAttack(moving, m.to);
-                continue;
-            }
-            rec.removeAttack(rec.board[m.from], m.to);
-        }
-        for (int i = 0; i < preBlackAttacks.length(); i++) {
-            Move m = preBlackAttacks.at(i);
-            if (m == null) {
-                break;
-            }
-            if (m.from == move.from) {
-                rec.removeAttack(moving, m.to);
-                continue;
-            }
-            rec.removeAttack(rec.board[m.from], m.to);
-        }
-
-        // re-add all sliding piece attacks after move
-        for (int i = 0; i < postWhiteAttacks.length(); i++) {
-            Move m = postWhiteAttacks.at(i);
-            if (m == null) {
-                break;
-            }
-            rec.addAttack(rec.board[m.from], m.to);
-        }
-        for (int i = 0; i < postBlackAttacks.length(); i++) {
-            Move m = postBlackAttacks.at(i);
-            if (m == null) {
-                break;
-            }
-            rec.addAttack(rec.board[m.from], m.to);
-        }
-
-        // recalculate moving piece attacks, if it's sliding it's already done
-        if (!isSlidingPiece(rec, move.to)) {
-            // removing all attacks from before move
-            for (int i = 0; i < legalMoves.length(); i++) {
-                Move m = legalMoves.at(i);
-                if (m.attack) {
-                    if (m.from == move.from) {
-                        rec.removeAttack(moving, m.to);
-                        continue;
+            if (pos == move.to) { // recalc moving piece attacks
+                MoveList newMovingAttacks = PieceMover.moves(rec, pos);
+                for (int i = 0; i < newMovingAttacks.length(); i++) {
+                    Move m = newMovingAttacks.at(i);
+                    if (m.attack) {
+                        rec.addAttack(moving, m.to);
                     }
-                    rec.removeAttack(rec.board[m.from], m.to);
+                }
+            } else if (isSlidingPiece(rec, pos)) { // recalc sliding piece attacks 
+                MoveList newSlidingMoves = PieceMover.moves(rec, pos);
+                for (int i = 0; i < newSlidingMoves.length(); i++) {
+                    Move m = newSlidingMoves.at(i);
+                    if (m.attack) {
+                        rec.addAttack(rec.board[pos], m.to);
+                    }
                 }
             }
-            // calculate and add new attacks after move
-            MoveList newMoves = PieceMover.moves(rec, move.to);
-            for (int i = 0; i < newMoves.length(); i++) {
-                Move m = newMoves.at(i);
-                if (m.attack) {
-                    rec.addAttack(rec.board[m.from], m.to);
-                }
-            } 
-        }        
+        }
     }
 }
