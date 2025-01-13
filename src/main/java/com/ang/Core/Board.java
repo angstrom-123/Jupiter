@@ -211,17 +211,17 @@ public class Board {
                 rec.epPawnPos = -1; 
                 break;
             case Flag.PROMOTE:
-                int dir = (col == Piece.WHITE.val()) ? 1 : -1;
-                int[] oldAttacks = new int[]{-7 * dir, -9 * dir};
-                for (int offset : oldAttacks) {
-                    if (inBounds(move.from, offset)) {
-                        rec.removeAttack(piece, move.from + offset);
-                        // rec.removeAttack(col, move.from + offset);
-                    }
-                }
                 rec.board[move.to] = Piece.QUEEN.val() | col;
                 rec.removePosition(piece, move.to);
                 rec.addPosition(Piece.QUEEN, move.to);
+
+                MoveList promotedMoves = PieceMover.moves(rec, move.to);
+                for (int i = 0; i < promotedMoves.length(); i++) {
+                    Move m = promotedMoves.at(i);
+                    if (m.attack || (m.flag == Flag.ONLY_ATTACK)) {
+                        rec.addAttack(rec.board[move.to], m.to);
+                    }
+                }
 
                 rec.epPawnPos = -1; 
                 break;
@@ -404,7 +404,7 @@ public class Board {
             if (pos == move.from) { // remove attacks of moving piece
                 for (int i = 0; i < legalMoves.length(); i++) {
                     Move m = legalMoves.at(i);
-                    if (m.attack) {
+                    if (m.attack || (m.flag == Flag.ONLY_ATTACK)) {
                         rec.removeAttack(moving, m.to);
                     }
                 }
@@ -412,7 +412,7 @@ public class Board {
                 MoveList takenMoves = PieceMover.moves(rec, pos);
                 for (int i = 0; i < takenMoves.length(); i++) {
                     Move m = takenMoves.at(i);
-                    if (m.attack) {
+                    if (m.attack || (m.flag == Flag.ONLY_ATTACK)) {
                         rec.removeAttack(taken, m.to);
                     }
                 }   
@@ -420,7 +420,7 @@ public class Board {
                 MoveList slidingMoves = PieceMover.moves(rec, pos);
                 for (int i = 0; i < slidingMoves.length(); i++) {
                     Move m = slidingMoves.at(i);
-                    if (m.attack) {
+                    if (m.attack || (m.flag == Flag.ONLY_ATTACK)) {
                         rec.removeAttack(rec.board[pos], m.to);
                     }
                 }
@@ -441,7 +441,7 @@ public class Board {
                 MoveList newMovingAttacks = PieceMover.moves(rec, pos);
                 for (int i = 0; i < newMovingAttacks.length(); i++) {
                     Move m = newMovingAttacks.at(i);
-                    if (m.attack) {
+                    if (m.attack || (m.flag == Flag.ONLY_ATTACK)) {
                         rec.addAttack(moving, m.to);
                     }
                 }
@@ -449,7 +449,7 @@ public class Board {
                 MoveList newSlidingMoves = PieceMover.moves(rec, pos);
                 for (int i = 0; i < newSlidingMoves.length(); i++) {
                     Move m = newSlidingMoves.at(i);
-                    if (m.attack) {
+                    if (m.attack || (m.flag == Flag.ONLY_ATTACK)) {
                         rec.addAttack(rec.board[pos], m.to);
                     }
                 }
