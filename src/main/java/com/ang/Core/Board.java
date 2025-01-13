@@ -215,14 +215,6 @@ public class Board {
                 rec.removePosition(piece, move.to);
                 rec.addPosition(Piece.QUEEN, move.to);
 
-                MoveList promotedMoves = PieceMover.moves(rec, move.to);
-                for (int i = 0; i < promotedMoves.length(); i++) {
-                    Move m = promotedMoves.at(i);
-                    if (m.attack || (m.flag == Flag.ONLY_ATTACK)) {
-                        rec.addAttack(rec.board[move.to], m.to);
-                    }
-                }
-
                 rec.epPawnPos = -1; 
                 break;
             default:

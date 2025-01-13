@@ -183,9 +183,9 @@ public class Search {
             : -contemptFactor;
             return drawEval;
         default:
-            bestEval = evaluate(rec, col);
-            System.out.println("none state "+bestEval);
-            rec.printBoard();
+            bestEval = evaluate(rec, col); // TODO : is this where engine cant find a move??
+            // System.out.println("none state "+bestEval);
+            // rec.printBoard();
             return bestEval; // why getting through?? TODO : investigate
         }
     }

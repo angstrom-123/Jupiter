@@ -39,15 +39,16 @@ public class PieceMover {
                 } else {
                     moves.add(new Move(from, from + offset, false)); 
                 }
+                
+                // double push
+                offset = -16 * dir;
+                if (((Math.floor(from / 8) == 1) && (dir == -1)) // black
+                        || ((Math.floor(from / 8) == 6) && (dir == 1))) { // white
+                    if (rec.board[from + offset] == Piece.NONE.val()) {
+                        moves.add(new Move(from, from + offset, Flag.DOUBLE_PUSH, false)); 
+                    }
+                } 
             }
-            // double push
-            offset = -16 * dir;
-            if (((Math.floor(from / 8) == 1) && (dir == -1)) // black
-                    || ((Math.floor(from / 8) == 6) && (dir == 1))) { // white
-                if (rec.board[from + offset] == Piece.NONE.val()) {
-                    moves.add(new Move(from, from + offset, Flag.DOUBLE_PUSH, false)); 
-                }
-            } 
         }
         
         int[] offsets = new int[]{(-8 * dir) - 1, (-8 * dir) + 1};

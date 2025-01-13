@@ -91,6 +91,10 @@ public class Game implements GameInterface {
         int xCoord = (int) Math.floor((double) x / actualSquareSize);
         int yCoord = (int) Math.floor((double) y / actualSquareSize);
         int pressed = yCoord * 8 + xCoord;  
+        if ((pressed > 63) || (pressed < 0)) {
+            System.err.println("OOB click");
+            return;
+        }
         if (((gameRec.board[pressed] & 0b11000) == playerCol)
                 && playerCanMove) {
             selected = pressed;
@@ -101,9 +105,7 @@ public class Game implements GameInterface {
         } else if (selected > -1) {
             Move playerMove = findMove(new Move(selected, pressed), legalMoves);
             boolean playerTook = (gameRec.board[playerMove.to] != Piece.NONE.val());
-            if (Board.tryMove(gameRec, playerMove)) {
-                gameRec.showAttacks();
-                
+            if (Board.tryMove(gameRec, playerMove)) {                
                 if (((gameRec.board[playerMove.to] & 0b111) != Piece.PAWN.val())
                         && !playerTook) {
                     Global.fiftyMoveCounter++;
@@ -120,7 +122,7 @@ public class Game implements GameInterface {
 
                 renderer.drawBoard();
                 renderer.drawAllSprites(gameRec);
-                // gameBoard.showPositions(); // debug
+                gameRec.showPositions(); // debug
 
             } else {
                 System.err.println("Player did not make a valid move");
@@ -133,9 +135,7 @@ public class Game implements GameInterface {
                 return;
             }
             boolean engineTook = (gameRec.board[engineMove.to] != Piece.NONE.val());
-            if (Board.tryMove(gameRec, engineMove)) {
-                gameRec.showAttacks();
-                
+            if (Board.tryMove(gameRec, engineMove)) {                
                 if (((gameRec.board[engineMove.to] & 0b111) != Piece.PAWN.val())
                         && !engineTook) {
                     Global.fiftyMoveCounter++;
@@ -151,7 +151,7 @@ public class Game implements GameInterface {
 
                 renderer.drawBoard();
                 renderer.drawAllSprites(gameRec);
-                // gameBoard.showPositions(); // debug
+                gameRec.showPositions(); // debug
             } else {
                 System.err.println("Engine could not make a valid move");
                 return;
