@@ -1,6 +1,7 @@
 package com.ang.Engine;
 
 import com.ang.Global;
+import com.ang.Util.*;
 import com.ang.Core.*;
 import com.ang.Core.Moves.*;
 
@@ -24,8 +25,11 @@ public class Search {
     private int     timeLimit;
     private int     playerCol;
     private int     ttHits;
+    private int     positionsSearched;
     private int     maxDepth;
     private long    endTime;
+
+    private PVLine pvLine = new PVLine();
 
     public Search(int searchTime, Piece col) {
         this(searchTime, col.val());
@@ -37,6 +41,9 @@ public class Search {
     }
 
     public Move generateMove(BoardRecord rec) {
+        long actualStartTime = System.currentTimeMillis();
+        this.positionsSearched = 0;
+
         endTime = System.currentTimeMillis() + timeLimit;
         Move lastPlyBestMove = Move.invalid();
         maxDepth = 1;
@@ -44,6 +51,8 @@ public class Search {
             Global.quiesces = 0;
             Global.searches = 0;
             ttHits = 0;
+
+            PVLine line = new PVLine();
 
             int bestEval = -Global.INFINITY;
 
@@ -59,13 +68,38 @@ public class Search {
                             + " with eval " + bestEval);
                     System.out.println("white " + evaluate(rec, Piece.WHITE.val())
                             + " black " + evaluate(rec, Piece.BLACK.val()));
+                    System.out.println("searched " + this.positionsSearched + " in "
+                            + ((System.currentTimeMillis() - actualStartTime) / 1000) 
+                            + " s");
+
+                    System.out.println("principal variation");
+                    for (int j = 0; j < pvLine.length; j++) {
+                        Move m = pvLine.moves[j];
+                        if (m == null) {
+                            System.out.println("failed to get m at 79");
+                        }
+                        // System.out.println(m.from + " to " + m.to);
+                        System.out.println(pvLine.algebraics[j]);
+                        System.out.println();
+                    }
+
+                    for (int j = 0; j < 64; j++) {
+                        if (j % 8 == 0) System.out.println();
+                        if (j < 10) {
+                            System.out.print(j + "  ");
+                        } else {
+                            System.out.print(j + " ");
+                        }
+                    }
+                    
                     return lastPlyBestMove;
                 }
 
                 Move m = moves.at(i);
-                if (m.flag == Flag.ONLY_ATTACK) {
+                if (m.flag == MoveFlag.ONLY_ATTACK) {
                     continue;
                 }
+
                 BoardRecord tempRec = rec.copy();
                 
                 if (Board.tryMove(tempRec, m)) {
@@ -73,28 +107,30 @@ public class Search {
 
                     switch (Board.endState(tempRec, engineCol)) {
                     case DRAW:
-                        int drawEval = (engineCol == Piece.WHITE.val())
-                        ? contemptFactor
-                        : -contemptFactor;
-                        eval = drawEval;
+                        eval = contemptFactor;
                         break;
                     case CHECKMATE:
-                        int mateEval = (engineCol == Piece.WHITE.val())
-                        ? -Global.INFINITY
-                        : Global.INFINITY;
-                        eval = mateEval;
+                        eval = -Global.INFINITY;
                         break;
                     default:
                         eval = alphaBetaNega(tempRec, 
                                 -Global.INFINITY, Global.INFINITY, 
-                                playerCol, 0);
+                                playerCol, 0, line);
                         break;
                     }
                     
                     if (engineCol == Piece.BLACK.val()) {
                         eval = -eval;
                     }
-                    if (eval > bestEval) {
+                    if (eval > bestEval) { // always pv
+                        pvLine.moves[0] = m;
+                        pvLine.algebraics[0] = AlgebraicNotator.moveToAlgeb(rec, m);
+                        for (int j = 0; j < line.length; j++) {
+                            pvLine.moves[j + 1] = line.moves[j];
+                            pvLine.algebraics[j + 1] = line.algebraics[j];
+                        }
+                        pvLine.length = line.length + 1;
+
                         bestEval = eval;
                         bestMove = m;
 
@@ -102,13 +138,11 @@ public class Search {
                                 + eval + " from: " + m.from+" to: " + m.to); 
                         // System.out.println("king pos eval "+endgameKingPosEval(tempRec, engineCol));
                         // System.out.println("tt hits: "+ttHits);
-                        // System.out.println("quiesces: " + Global.quiesces 
-                        //     + " searches: " + Global.searches);
                     }
                 }
             }
 
-            if (bestMove.isInvalid()) { // TODO : checkmate / stalemate
+            if (bestMove.isInvalid()) {
                 return lastPlyBestMove;
             }
             lastPlyBestMove = bestMove;
@@ -116,14 +150,16 @@ public class Search {
         }
     }
 
-    private int alphaBetaNega(BoardRecord rec, double alpha, double beta, 
-            int col, int depth) {
-        Global.searches++;
-
+    private int alphaBetaNega(BoardRecord rec, int alpha, int beta, 
+            int col, int depth, PVLine pLine) {
+        
         boolean foundMove = false;
         int bestEval = -Global.INFINITY;
+        PVLine line = new PVLine();
+
         if (depth == maxDepth) {
-            return quiesce(rec, alpha, beta, col, depth);
+            pLine.length = 0; // TODO : wtf is this for in doc?
+            return quiesce(rec, alpha, beta, col, depth, line);
         }
 
         MoveList moves  = Board.allMoves(rec, col);
@@ -134,36 +170,45 @@ public class Search {
                 break;
             }
             Move move = moves.at(i);
-            if (move.flag == Flag.ONLY_ATTACK) {
+            if (move.flag == MoveFlag.ONLY_ATTACK) {
                 continue;
             }
 
             BoardRecord tempRec = rec.copy();
             if (Board.tryMove(tempRec, move)) {
+                this.positionsSearched++;
                 foundMove = true;
-                int eval = -alphaBetaNega(tempRec, 
-                        -beta, -alpha, Piece.opposite(col).val(), depth + 1);
+                int eval = -alphaBetaNega(tempRec, -beta, -alpha, 
+                        Piece.opposite(col).val(), depth + 1, line);
                 if (eval > bestEval) {
                     bestEval = eval;
                     if (eval > alpha) {
                         alpha = eval;
+                        // save pv node
+                        pLine.moves[0] = move;
+                        pLine.algebraics[0] = AlgebraicNotator.moveToAlgeb(rec, move);
+                        for (int j = 0; j < line.length; j++) {
+                            pLine.moves[j + 1] = line.moves[j];
+                            pLine.algebraics[j + 1] = line.algebraics[j];
+                        }
+                        pLine.length = line.length + 1;
                         // save to transposition table
-                        TableEntry te = new TableEntry(SearchNode.ALL, move, 
+                        TableEntry te = new TableEntry(TTFlag.PV, move, 
                                 eval, depth, 0);
                         Global.tTable.saveHash(te, tempRec, col);
-                    } else { 
+                    } else { // fail low (upper bound)
                         // save to transposition table
-                        TableEntry te = new TableEntry(SearchNode.PV, move, 
+                        TableEntry te = new TableEntry(TTFlag.ALL, move, 
                                 eval, depth, 0);
                         Global.tTable.saveHash(te, tempRec, col);
                     }
                 }
-                if (eval >= beta) {
+                if (eval >= beta) { // fail high (lower bound)
                     // save to transposition table
-                    TableEntry te = new TableEntry(SearchNode.CUT, move, 
+                    TableEntry te = new TableEntry(TTFlag.CUT, move, 
                             eval, depth, 0);
                     Global.tTable.saveHash(te, tempRec, col);
-                    break;
+                    return beta;
                 }
             }
         }
@@ -184,108 +229,109 @@ public class Search {
             return drawEval;
         default:
             bestEval = evaluate(rec, col); // TODO : is this where engine cant find a move??
-            // System.out.println("none state "+bestEval);
-            // rec.printBoard();
-            return bestEval; // why getting through?? TODO : investigate
+            return bestEval; 
         }
     }
-    // TODO : fix : quiescence doesnt see positions where enemy attacks the engine
-    //          engine will hang pieces if they are
-    private int quiesce(BoardRecord rec, double alpha, double beta, 
-            int col, int depth) {
-        Global.quiesces++;
+
+    private int quiesce(BoardRecord rec, int alpha, int beta, int col, int depth, PVLine pLine) {
         int standPat = evaluate(rec, col);
         int bestEval = standPat;
 
-        if (standPat >= beta) { 
-            return standPat;
-        }
-        if (alpha < standPat) {
-            alpha = standPat;
-        }
+        if (standPat >= beta) return standPat;
+        
+        if (alpha < standPat) alpha = standPat;
 
+        BoardRecord outerRec = rec;
+        PVLine line = new PVLine();
+    
         MoveList moves = Board.allMoves(rec, col);
         moves = orderMoves(rec, moves, col);
         
         for (int i = 0; i < moves.length(); i++) {
             Move move = moves.at(i);
-            if (move.flag == Flag.ONLY_ATTACK) {
-                continue;
-            }
+            if (move.flag == MoveFlag.ONLY_ATTACK) continue;
             
             // heuristic cut-offs
 
-            // TODO : test
-            if (staticExchangeEvaluation(rec, move.to, col) == SEEResult.LOSING) {
+            if ((standPat + pieceValue(rec, move.to) + 200 < alpha)
+                    && (rec.minorPieceCount() > 2) && (move.flag != MoveFlag.PROMOTE)) {
                 continue;
             }
-            
-            if ((standPat + pieceValues(rec, move.to) + 200 < alpha)
-                    && (rec.minorPieceCount() > 2) && !Board.isPromotion(rec, move)) {
+
+            if ((see(rec, move.to, col) == SEEFlag.LOSING)
+                    && (move.flag != MoveFlag.PROMOTE)) {
+                continue;
+            }
+
+            if (rec.board[move.to] == Piece.NONE.val()) {
                 continue;
             }
 
             BoardRecord tempRec = rec.copy(); 
             if (Board.tryMove(tempRec, move)) { 
-                int opCol = Piece.opposite(col).val();
-                int enemyKingPos = Board.findKing(tempRec, opCol);
-                if (enemyKingPos == -1) {
-                    continue;
-                }
-                if ((rec.board[move.to] == Piece.NONE.val())
-                        && (!Board.underAttack(tempRec, enemyKingPos, opCol))) {
-                    continue;
-                }
+                this.positionsSearched++;
 
+                // boolean lostForUs = Board.insufficientMaterial(tempRec, col);
+                // boolean lostForThem = Board.insufficientMaterial(tempRec, Piece.opposite(col).val());
+                
                 int eval = -quiesce(tempRec, -beta, -alpha, 
-                        Piece.opposite(col).val(), depth + 1);
+                        Piece.opposite(col).val(), depth + 1, line);
+
+                // contemptFactor = (lostForThem && !lostForUs) ? 1000 : 0;
+                // contemptFactor = (lostForUs && !lostForThem) ? -1000 : 0;
 
                 if (eval > bestEval) {
                     bestEval = eval;
                     if (eval > alpha) {
                         alpha = eval;
+                        // save pv node
+                        pLine.moves[0] = move;
+                        pLine.algebraics[0] = AlgebraicNotator.moveToAlgeb(rec, move);
+                        for (int j = 0; j < line.length; j++) {
+                            pLine.moves[j + 1] = line.moves[j];
+                            pLine.algebraics[j + 1] = line.algebraics[j];
+                        }
+                        pLine.length = line.length + 1;
                         // save to transposition table
-                        TableEntry te = new TableEntry(SearchNode.ALL, move, 
+                        TableEntry te = new TableEntry(TTFlag.PV, move, 
                                 eval, depth, 0);
                         Global.tTable.saveHash(te, tempRec, col);
-                    } else { 
+                    } else { // fail low (upper bound)
                         // save to transposition table
-                        TableEntry te = new TableEntry(SearchNode.PV, move, 
+                        TableEntry te = new TableEntry(TTFlag.ALL, move, 
                                 eval, depth, 0);
                         Global.tTable.saveHash(te, tempRec, col);
                     }
                 }
-                if (eval >= beta) {
+                if (eval >= beta) { // fail high (lower bound)
                     // save to transposition table
-                    TableEntry te = new TableEntry(SearchNode.CUT, move, 
+                    TableEntry te = new TableEntry(TTFlag.CUT, move, 
                             eval, depth, 0);
                     Global.tTable.saveHash(te, tempRec, col);
-                    break;
+                    outerRec = tempRec;
+                    return beta; // TODO : test
+
+                    // return bestEval;
                 }
             }   
         }
 
-        switch (Board.endState(rec, col)) {
+        switch (Board.endState(outerRec, col)) {
         case CHECKMATE:
             int mateEval = (col == Piece.WHITE.val())
             ? -Global.INFINITY + depth * 100
             : Global.INFINITY - depth * 100;
             return mateEval;
         case DRAW:
-            int drawEval = (col == Piece.WHITE.val())
-            ? contemptFactor
-            : -contemptFactor;
-            // System.out.println("quiescence draw state "+drawEval);
-            // rec.printBoard();
-            return drawEval;
+            return (col == Piece.WHITE.val())
+                ? contemptFactor
+                : -contemptFactor;
         default:
-            return evaluate(rec, col);
-            // return evaluate(rec, col);
-            // return bestEval;
+            return bestEval;
         }
     }
 
-    private int pieceValues(BoardRecord rec, int pos) {
+    private int pieceValue(BoardRecord rec, int pos) {
         int value = 0;
         int pieceCol = rec.board[pos] & 0b11000;
         int heatmapIndex = (pieceCol == Piece.WHITE.val()) ? pos : 63 - pos;
@@ -361,32 +407,32 @@ public class Search {
         return eval;
     }
 
-    private SEEResult staticExchangeEvaluation(BoardRecord rec, int pos, int currentCol) {
+    private SEEFlag see(BoardRecord rec, int pos, int currentCol) {
         int eval = 0;
         int initCapVal = Board.pieceInSquare(rec, pos).staticEval();
 
         int[] friendlyExchVals = exchangeValues(rec, pos, currentCol);
         int[] enemyExchVals = exchangeValues(rec, pos, Piece.opposite(currentCol).val());
-        if (friendlyExchVals.length == 0) return SEEResult.EQUAL;
-        if (enemyExchVals.length == 0) return SEEResult.WINNING;
+        if (friendlyExchVals.length == 0) return SEEFlag.EQUAL;
+        if (enemyExchVals.length == 0) return SEEFlag.WINNING;
 
         int friendlyIndex = 0;
         int enemyIndex = 0;
 
         eval += initCapVal - friendlyExchVals[friendlyIndex++];
-        if (eval < 0) return SEEResult.LOSING;
+        if (eval < 0) return SEEFlag.LOSING;
         while (true) {
             if ((friendlyIndex == friendlyExchVals.length)
                     || (enemyIndex == enemyExchVals.length)) {
                 int diff = friendlyExchVals.length - enemyExchVals.length;
-                if (diff > 0) return SEEResult.WINNING;
-                if (diff < 0) return SEEResult.LOSING;
-                return SEEResult.EQUAL;
+                if (diff > 0) return SEEFlag.WINNING;
+                if (diff < 0) return SEEFlag.LOSING;
+                return SEEFlag.EQUAL;
             }
 
             eval += friendlyExchVals[friendlyIndex++] - enemyExchVals[enemyIndex++];
-            if (eval < 0) return SEEResult.LOSING;
-            if (eval > 0) return SEEResult.WINNING;
+            if (eval < 0) return SEEFlag.LOSING;
+            if (eval > 0) return SEEFlag.WINNING;
         }
     }
 
@@ -456,13 +502,21 @@ public class Search {
             if (pos == -1) {
                 break;
             }
-            eval += pieceValues(rec, pos);
+            eval += pieceValue(rec, pos);
         }
         return eval;
     }
 
     private int evaluate(BoardRecord rec, int currentCol) {        
+        // probe transposition table
+        int boardHash = Global.tTable.zobristHash(rec, currentCol);
+        TableEntry te = Global.tTable.searchTable(boardHash);
+        if ((te != null) && (te.nodeType == TTFlag.PV)) {
+            return te.eval;
+        }
+        
         int eval = 0;
+
         eval += (currentCol == Piece.WHITE.val()) 
         ? pieceValueEval(rec) 
         : -pieceValueEval(rec);

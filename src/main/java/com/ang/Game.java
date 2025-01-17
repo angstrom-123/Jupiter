@@ -4,7 +4,7 @@ import com.ang.Core.Board;
 import com.ang.Core.BoardRecord;
 import com.ang.Core.Piece;
 import com.ang.Core.Moves.*;
-import com.ang.Engine.EndState;
+import com.ang.Engine.GameFlag;
 import com.ang.Engine.Search;
 import com.ang.Graphics.Renderer;
 import com.ang.Util.GameInterface;
@@ -38,14 +38,15 @@ public class Game implements GameInterface {
 
         selected            = -1;
         legalMoves          = new MoveList(0);
-        String startFEN     = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-        // String startFEN     = "3r4/8/3k4/8/8/3K4/8/8";
+        // String startFEN     = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+        String startFEN     = "3r4/8/3k4/8/8/3K4/8/8";
         // String startFEN     = "8/8/3k4/8/2KB4/4r3/8/8"; 
         gameRec             = new BoardRecord(startFEN);
         renderer            = new Renderer(squareSize, renderScale, this);
 
         renderer.drawBoard();
         renderer.drawAllSprites(gameRec);
+        renderer.drawSquareNums();
 
         if (engineCol == Piece.WHITE.val()) {
             playerCanMove = false;
@@ -56,8 +57,11 @@ public class Game implements GameInterface {
             }
             renderer.drawBoard();
             renderer.drawAllSprites(gameRec);
+            renderer.drawSquareNums();
         }
         playerCanMove = true;
+
+        System.out.println(Board.insufficientMaterial(gameRec, Piece.BLACK.val()));
     }
 
     public void test(int time) {
@@ -101,6 +105,7 @@ public class Game implements GameInterface {
             renderer.drawBoard();
             renderer.highlightSquare(xCoord, yCoord);
             renderer.drawAllSprites(gameRec);
+            renderer.drawSquareNums();
             legalMoves = showMoves(xCoord, yCoord);
         } else if (selected > -1) {
             Move playerMove = findMove(new Move(selected, pressed), legalMoves);
@@ -110,10 +115,11 @@ public class Game implements GameInterface {
                         && !playerTook) {
                     Global.fiftyMoveCounter++;
                 }
-                if (Board.endState(gameRec, playerCol) == EndState.DRAW) {
+                if (Board.endState(gameRec, playerCol) == GameFlag.DRAW) {
                     System.out.println("draw");
                     renderer.drawBoard();
                     renderer.drawAllSprites(gameRec);
+                    renderer.drawSquareNums();
                     return;
                 }
                 Global.repTable.saveRepetition(gameRec.copy());
@@ -122,7 +128,8 @@ public class Game implements GameInterface {
 
                 renderer.drawBoard();
                 renderer.drawAllSprites(gameRec);
-                gameRec.showPositions(); // debug
+                renderer.drawSquareNums();
+                gameRec.printBoard(); // debug
 
             } else {
                 System.err.println("Player did not make a valid move");
@@ -140,9 +147,10 @@ public class Game implements GameInterface {
                         && !engineTook) {
                     Global.fiftyMoveCounter++;
                 }
-                if (Board.endState(gameRec, engineCol) == EndState.DRAW) {
+                if (Board.endState(gameRec, engineCol) == GameFlag.DRAW) {
                     renderer.drawBoard();
                     renderer.drawAllSprites(gameRec);
+                    renderer.drawSquareNums();
                     System.out.println("draw");
                     return;
                 }
@@ -151,7 +159,8 @@ public class Game implements GameInterface {
 
                 renderer.drawBoard();
                 renderer.drawAllSprites(gameRec);
-                gameRec.showPositions(); // debug
+                renderer.drawSquareNums();
+                gameRec.printBoard(); // debug
             } else {
                 System.err.println("Engine could not make a valid move");
                 return;
@@ -162,7 +171,7 @@ public class Game implements GameInterface {
     private MoveList showMoves(int x, int y) {
         MoveList moves = PieceMover.moves(gameRec, selected);   
         for (int i = 0; i < moves.length(); i++) {
-            if (moves.at(i).flag == Flag.ONLY_ATTACK) {
+            if (moves.at(i).flag == MoveFlag.ONLY_ATTACK) {
                 continue;
             }
             BoardRecord tempRec = gameRec.copy();

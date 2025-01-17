@@ -1,6 +1,6 @@
 package com.ang.Engine;
 
-public enum EndState {
+public enum GameFlag {
     CHECKMATE,
     DRAW,
     NONE;

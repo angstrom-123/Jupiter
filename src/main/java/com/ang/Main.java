@@ -22,7 +22,7 @@ public class Main {
     }
 
     private static void initGame(boolean test) {
-        Search s0 = new Search(2500, Piece.BLACK);
+        Search s0 = new Search(2000, Piece.BLACK);
         Game g = new Game(s0);
         if (test) {
             g.test(4000);

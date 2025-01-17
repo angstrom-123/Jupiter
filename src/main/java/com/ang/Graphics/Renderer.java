@@ -14,10 +14,11 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 
 public class Renderer extends JFrame {
-    private final Colour    DARK_COL       = new Colour(112, 102, 119);
-    private final Colour    LIGHT_COL      = new Colour(204, 183, 174);
-    private final Colour    HIGHLIGHT_COL  = new Colour(255, 106,  60);
-    
+    private final Colour    DARK_COL        = new Colour(112, 102, 119);
+    private final Colour    LIGHT_COL       = new Colour(204, 183, 174);
+    private final Colour    HIGHLIGHT_COL   = new Colour(255, 106,  60);
+    private final Colour    FONT_COL        = new Colour( 50,  50,  60);
+
     private int             squareSize;
     private double          scale;
     private int             size;
@@ -149,6 +150,40 @@ public class Renderer extends JFrame {
             }
         }  
         frame.repaint();
+    }
+
+    public void drawSquareNums() {
+        drawCharInSquare(0, 7, 34, 34, Characters.a);
+        drawCharInSquare(1, 7, 34, 34, Characters.b);
+        drawCharInSquare(2, 7, 34, 34, Characters.c);
+        drawCharInSquare(3, 7, 34, 34, Characters.d);
+        drawCharInSquare(4, 7, 34, 34, Characters.e);
+        drawCharInSquare(5, 7, 34, 34, Characters.f);
+        drawCharInSquare(6, 7, 34, 34, Characters.g);
+        drawCharInSquare(7, 7, 34, 34, Characters.h);
+
+        drawCharInSquare(0, 0, 1, 1, Characters.eight);
+        drawCharInSquare(0, 1, 1, 1, Characters.seven);
+        drawCharInSquare(0, 2, 1, 1, Characters.six);
+        drawCharInSquare(0, 3, 1, 1, Characters.five);
+        drawCharInSquare(0, 4, 1, 1, Characters.four);
+        drawCharInSquare(0, 5, 1, 1, Characters.three);
+        drawCharInSquare(0, 6, 1, 1, Characters.two);
+        drawCharInSquare(0, 7, 1, 1, Characters.one);
+
+        frame.repaint();
+    }
+
+    private void drawCharInSquare(int x, int y, int xPad, int yPad, int[][] letter) {
+        int startX = x * squareSize;
+        int startY = y * squareSize;
+        for (int j = 0; j < 10; j++) {
+            for (int i = 0; i < 10; i++) {
+                if (letter[i][j] == 1) {
+                    drawPixel(startX + xPad + j, startY + yPad + i, FONT_COL);
+                }
+            }
+        }
     }
 
     private void drawSquare(int x, int y, Colour col) {

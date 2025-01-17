@@ -2,7 +2,7 @@ package com.ang.Core;
 
 import com.ang.Global;
 import com.ang.Core.Moves.*;
-import com.ang.Engine.EndState;
+import com.ang.Engine.GameFlag;
 
 public class Board {
     // public
@@ -101,35 +101,48 @@ public class Board {
         return false;
     }
 
-    public static EndState endState(BoardRecord rec, int col) {
+    public static GameFlag endState(BoardRecord rec, int col) {
         if (isDraw(rec)) {
-            return EndState.DRAW;
+            return GameFlag.DRAW;
         }
         
         int kingPos = findKing(rec, col);
         if (kingPos == -1) {
-            return EndState.CHECKMATE;
+            return GameFlag.CHECKMATE;
         }
         
         MoveList moves = allMoves(rec, col);
         for (int i = 0; i < moves.length(); i++) {
             Move m = moves.at(i);
-            if (m.flag == Flag.ONLY_ATTACK) {
+            if (m.flag == MoveFlag.ONLY_ATTACK) {
                 continue;
             }
             BoardRecord tempRec = rec.copy();
             if (tryMove(tempRec, m)) {
-                return EndState.NONE;
+                return GameFlag.NONE;
             }
         }
 
         if (!underAttack(rec, kingPos, col)) {
-            return EndState.DRAW;
+            return GameFlag.DRAW;
         }
 
-        return EndState.CHECKMATE;
+        return GameFlag.CHECKMATE;
     }
 
+    public static boolean insufficientMaterial(BoardRecord rec, int col) {
+        for (int i = 0; i < rec.rooks.length(); i++) {
+            if ((rec.board[rec.rooks.at(i)] & 0b11000) == col) return false;
+        }
+        for (int i = 0; i < rec.queens.length(); i++) {
+            if ((rec.board[rec.queens.at(i)] & 0b11000) == col) return false;
+        }
+        for (int i = 0; i < rec.pawns.length(); i++) {
+            if ((rec.board[rec.pawns.at(i)] & 0b11000) == col) return false;
+        }
+
+        return true;
+    }
     public static boolean insufficientMaterial(BoardRecord rec) {
         return (rec.rooks.length() == 0) 
                 && (rec.pawns.length() == 0) 
@@ -169,14 +182,14 @@ public class Board {
     private static void resolveFlags(BoardRecord rec, Move move, int piece) {
         int col = piece & 0b11000;
         switch (move.flag) {
-            case Flag.DOUBLE_PUSH:
+            case MoveFlag.DOUBLE_PUSH:
                 rec.epPawnPos = move.to;
                 break;
-            case Flag.EN_PASSANT:
+            case MoveFlag.EN_PASSANT:
                 MoveList takenMoves = PieceMover.moves(rec, rec.epPawnPos);
                 for (int i = 0; i < takenMoves.length(); i++) {
                     Move m = takenMoves.at(i);
-                    if (m.attack || (m.flag == Flag.ONLY_ATTACK)) {
+                    if (m.attack || (m.flag == MoveFlag.ONLY_ATTACK)) {
                         rec.removeAttack(rec.board[rec.epPawnPos], m.to);
                         // rec.removeAttack(Piece.opposite(col), m.to);
                     }
@@ -186,7 +199,7 @@ public class Board {
 
                 rec.epPawnPos = -1; 
                 break;
-            case Flag.CASTLE_SHORT:
+            case MoveFlag.CASTLE_SHORT:
                 int shortR = move.from + 3;
                 rec.board[shortR] = Piece.NONE.val();
                 rec.board[shortR - 2] = Piece.ROOK.val() | col;
@@ -198,7 +211,7 @@ public class Board {
 
                 rec.epPawnPos = -1;
                 break;
-            case Flag.CASTLE_LONG:
+            case MoveFlag.CASTLE_LONG:
                 int longR = move.from + -4;
                 rec.board[longR] = Piece.NONE.val();
                 rec.board[longR + 3] = Piece.ROOK.val() | col;
@@ -210,7 +223,7 @@ public class Board {
 
                 rec.epPawnPos = -1; 
                 break;
-            case Flag.PROMOTE:
+            case MoveFlag.PROMOTE:
                 rec.board[move.to] = Piece.QUEEN.val() | col;
                 rec.removePosition(piece, move.to);
                 rec.addPosition(Piece.QUEEN, move.to);
@@ -396,7 +409,7 @@ public class Board {
             if (pos == move.from) { // remove attacks of moving piece
                 for (int i = 0; i < legalMoves.length(); i++) {
                     Move m = legalMoves.at(i);
-                    if (m.attack || (m.flag == Flag.ONLY_ATTACK)) {
+                    if (m.attack || (m.flag == MoveFlag.ONLY_ATTACK)) {
                         rec.removeAttack(moving, m.to);
                     }
                 }
@@ -404,7 +417,7 @@ public class Board {
                 MoveList takenMoves = PieceMover.moves(rec, pos);
                 for (int i = 0; i < takenMoves.length(); i++) {
                     Move m = takenMoves.at(i);
-                    if (m.attack || (m.flag == Flag.ONLY_ATTACK)) {
+                    if (m.attack || (m.flag == MoveFlag.ONLY_ATTACK)) {
                         rec.removeAttack(taken, m.to);
                     }
                 }   
@@ -412,7 +425,7 @@ public class Board {
                 MoveList slidingMoves = PieceMover.moves(rec, pos);
                 for (int i = 0; i < slidingMoves.length(); i++) {
                     Move m = slidingMoves.at(i);
-                    if (m.attack || (m.flag == Flag.ONLY_ATTACK)) {
+                    if (m.attack || (m.flag == MoveFlag.ONLY_ATTACK)) {
                         rec.removeAttack(rec.board[pos], m.to);
                     }
                 }
@@ -433,7 +446,7 @@ public class Board {
                 MoveList newMovingAttacks = PieceMover.moves(rec, pos);
                 for (int i = 0; i < newMovingAttacks.length(); i++) {
                     Move m = newMovingAttacks.at(i);
-                    if (m.attack || (m.flag == Flag.ONLY_ATTACK)) {
+                    if (m.attack || (m.flag == MoveFlag.ONLY_ATTACK)) {
                         rec.addAttack(moving, m.to);
                     }
                 }
@@ -441,7 +454,7 @@ public class Board {
                 MoveList newSlidingMoves = PieceMover.moves(rec, pos);
                 for (int i = 0; i < newSlidingMoves.length(); i++) {
                     Move m = newSlidingMoves.at(i);
-                    if (m.attack || (m.flag == Flag.ONLY_ATTACK)) {
+                    if (m.attack || (m.flag == MoveFlag.ONLY_ATTACK)) {
                         rec.addAttack(rec.board[pos], m.to);
                     }
                 }

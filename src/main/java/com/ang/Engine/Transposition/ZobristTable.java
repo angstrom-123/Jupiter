@@ -1,4 +1,4 @@
-package com.ang.Engine.Zobrist;
+package com.ang.Engine.Transposition;
 
 import com.ang.Global;
 import com.ang.Core.Piece;

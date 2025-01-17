@@ -1,6 +1,6 @@
 package com.ang.Engine;
 
-public enum SEEResult {
+public enum SEEFlag {
     WINNING,
     LOSING,
     EQUAL;

@@ -1,6 +1,6 @@
 package com.ang.Core.Moves;
 
-public enum Flag {
+public enum MoveFlag {
     NONE,
     EN_PASSANT,
     CASTLE_SHORT,

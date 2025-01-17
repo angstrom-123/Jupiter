@@ -3,10 +3,10 @@ package com.ang.Core.Moves;
 public class Move {
     public int      from;
     public int      to;
-    public Flag     flag;
+    public MoveFlag     flag;
     public boolean  attack;
 
-    public Move(int from, int to, Flag flag, boolean attack) {
+    public Move(int from, int to, MoveFlag flag, boolean attack) {
         this.from   = from;
         this.to     = to;
         this.flag   = flag;
@@ -14,15 +14,15 @@ public class Move {
     }
 
     public Move(int from, int to, boolean attack) {
-        this(from, to, Flag.NONE, attack);
+        this(from, to, MoveFlag.NONE, attack);
     }
 
-    public Move(int from, int to, Flag flag) {
+    public Move(int from, int to, MoveFlag flag) {
         this(from, to, flag, true);
     }
 
     public Move(int from, int to) {
-        this(from, to, Flag.NONE, true);
+        this(from, to, MoveFlag.NONE, true);
     }
 
     public boolean equals(Move m) {

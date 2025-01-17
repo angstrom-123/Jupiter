@@ -1,7 +1,7 @@
 package com.ang;
 
-import com.ang.Engine.Zobrist.RepetitionTable;
-import com.ang.Engine.Zobrist.TranspositionTable;
+import com.ang.Engine.Transposition.RepetitionTable;
+import com.ang.Engine.Transposition.TranspositionTable;
 
 public class Global {
     public final static int INFINITY = Integer.MAX_VALUE;

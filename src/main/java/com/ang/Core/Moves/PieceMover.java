@@ -5,7 +5,7 @@ import com.ang.Core.BoardRecord;
 import com.ang.Core.Piece;
 
 public class PieceMover {
-    public static MoveList moves(BoardRecord rec, int from) {
+    public static MoveList moves(BoardRecord rec, int from) {        
         switch (rec.board[from] & 0b111) {
         case 1:
             return pawnMoves(rec, from);
@@ -35,17 +35,17 @@ public class PieceMover {
             if (rec.board[from + offset] == Piece.NONE.val()) { 
                 if ((from + offset < 8) || (from + offset > 55)) {
                     moves.add(new Move(from, from + offset, 
-                              Flag.PROMOTE, false));
+                              MoveFlag.PROMOTE, false));
                 } else {
                     moves.add(new Move(from, from + offset, false)); 
                 }
-                
+
                 // double push
                 offset = -16 * dir;
                 if (((Math.floor(from / 8) == 1) && (dir == -1)) // black
                         || ((Math.floor(from / 8) == 6) && (dir == 1))) { // white
                     if (rec.board[from + offset] == Piece.NONE.val()) {
-                        moves.add(new Move(from, from + offset, Flag.DOUBLE_PUSH, false)); 
+                        moves.add(new Move(from, from + offset, MoveFlag.DOUBLE_PUSH, false)); 
                     }
                 } 
             }
@@ -60,20 +60,20 @@ public class PieceMover {
                     == Piece.opposite(rec.board[from] & 0b11000).val()) {
                 // take
                 if ((from + off < 8) || (from + off > 55)) {
-                    moves.add(new Move(from, from + off, Flag.PROMOTE));
+                    moves.add(new Move(from, from + off, MoveFlag.PROMOTE));
                 } else {
                     moves.add(new Move(from, from + off)); 
                 }
             } else if (rec.board[from + off] == Piece.NONE.val()) {
                 // en passant
                 if (rec.epPawnPos == from + (off - (-8 * dir))) {
-                    moves.add(new Move(from, from + off, Flag.EN_PASSANT)); 
+                    moves.add(new Move(from, from + off, MoveFlag.EN_PASSANT)); 
                 } else {
-                    moves.add(new Move(from, from + off, Flag.ONLY_ATTACK));
+                    moves.add(new Move(from, from + off, MoveFlag.ONLY_ATTACK));
                 }
             } else { 
                 // friendly piece at attack square - need to add attack manually
-                moves.add(new Move(from, from + off, Flag.ONLY_ATTACK));
+                moves.add(new Move(from, from + off, MoveFlag.ONLY_ATTACK));
             }
         }
         return moves;
@@ -89,7 +89,7 @@ public class PieceMover {
                 if ((rec.board[from + move] & 0b11000) != col) {
                     moves.add(new Move(from, from + move));
                 } else {
-                    moves.add(new Move(from, from + move, Flag.ONLY_ATTACK));
+                    moves.add(new Move(from, from + move, MoveFlag.ONLY_ATTACK));
                 }
             }
         }
@@ -120,7 +120,7 @@ public class PieceMover {
                         && ((rec.board[from + move] & 0b11000) != col)) {
                     moves.add(new Move(from, from + move));
                 } else {
-                    moves.add(new Move(from, from + move, Flag.ONLY_ATTACK));
+                    moves.add(new Move(from, from + move, MoveFlag.ONLY_ATTACK));
                 }
             }
         }
@@ -129,14 +129,14 @@ public class PieceMover {
         ? rec.cRights[0]
         : rec.cRights[2];
         if (canShort == 1) {
-            moves.add(new Move(from, from + 2, Flag.CASTLE_SHORT, false));
+            moves.add(new Move(from, from + 2, MoveFlag.CASTLE_SHORT, false));
         }
 
         int canLong = (col == Piece.WHITE.val()) 
         ? rec.cRights[1]
         : rec.cRights[3];
         if (canLong == 1) {
-            moves.add(new Move(from, from - 2, Flag.CASTLE_LONG, false));
+            moves.add(new Move(from, from - 2, MoveFlag.CASTLE_LONG, false));
         }
 
         return moves;
@@ -164,7 +164,7 @@ public class PieceMover {
                 }
                 if ((rec.board[stepPos + offsets[i]] & 0b11000) == col) {
                     moves.add(new Move(from, stepPos + offsets[i], 
-                              Flag.ONLY_ATTACK));
+                              MoveFlag.ONLY_ATTACK));
                     break;
                 }
                 if ((rec.board[stepPos + offsets[i]] & 0b11000) == Piece.opposite(col).val()) {

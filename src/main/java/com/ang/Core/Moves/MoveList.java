@@ -88,7 +88,7 @@ public class MoveList {
             if (m == null) {
                 return false;
             }
-            if ((m.flag != Flag.ONLY_ATTACK) && (m.equals(move))) {
+            if ((m.flag != MoveFlag.ONLY_ATTACK) && (m.equals(move))) {
                 return true;
             }
         }
