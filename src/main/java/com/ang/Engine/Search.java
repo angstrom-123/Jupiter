@@ -1,5 +1,7 @@
 package com.ang.Engine;
 
+import javax.lang.model.SourceVersion;
+
 import com.ang.Global;
 import com.ang.Util.*;
 import com.ang.Core.*;
@@ -234,8 +236,12 @@ public class Search {
     }
 
     private int quiesce(BoardRecord rec, int alpha, int beta, int col, int depth, PVLine pLine) {
+        int maxDepth = 10;
+        
         int standPat = evaluate(rec, col);
         int bestEval = standPat;
+
+        if (depth > maxDepth) return standPat;
 
         if (standPat >= beta) return standPat;
         
@@ -258,27 +264,28 @@ public class Search {
                 continue;
             }
 
-            if ((see(rec, move.to, col) == SEEFlag.LOSING)
-                    && (move.flag != MoveFlag.PROMOTE)) {
+            if (!goodCapture(rec, move) && (move.flag != MoveFlag.PROMOTE)) {
+                if (see(rec, move.to, col) == SEEFlag.LOSING) {
+                    continue;
+                }
+            }
+
+            if ((rec.board[move.to] == Piece.NONE.val())
+                    && (noWinningHeavyCaptures(rec, Piece.opposite(col).val()))) {
                 continue;
             }
 
-            if (rec.board[move.to] == Piece.NONE.val()) {
-                continue;
-            }
+            // if (noWinningHeavyCaptures(rec, Piece.opposite(col).val())) {
+            //     continue;
+            // }
+
 
             BoardRecord tempRec = rec.copy(); 
             if (Board.tryMove(tempRec, move)) { 
                 this.positionsSearched++;
 
-                // boolean lostForUs = Board.insufficientMaterial(tempRec, col);
-                // boolean lostForThem = Board.insufficientMaterial(tempRec, Piece.opposite(col).val());
-                
                 int eval = -quiesce(tempRec, -beta, -alpha, 
                         Piece.opposite(col).val(), depth + 1, line);
-
-                // contemptFactor = (lostForThem && !lostForUs) ? 1000 : 0;
-                // contemptFactor = (lostForUs && !lostForThem) ? -1000 : 0;
 
                 if (eval > bestEval) {
                     bestEval = eval;
@@ -310,8 +317,6 @@ public class Search {
                     Global.tTable.saveHash(te, tempRec, col);
                     outerRec = tempRec;
                     return beta; // TODO : test
-
-                    // return bestEval;
                 }
             }   
         }
@@ -407,33 +412,59 @@ public class Search {
         return eval;
     }
 
-    private SEEFlag see(BoardRecord rec, int pos, int currentCol) {
+    public boolean goodCapture(BoardRecord rec, Move move) {
+        if (Board.pieceInSquare(rec, move.from).staticEval() 
+                > Board.pieceInSquare(rec, move.to).staticEval()) {
+            return true; 
+        }
+        return false;
+    }
+
+    public SEEFlag see(BoardRecord rec, int pos, int currentCol) {
+        if ((rec.board[pos] & 0b11000) == currentCol) return SEEFlag.EQUAL;
+
         int eval = 0;
         int initCapVal = Board.pieceInSquare(rec, pos).staticEval();
 
         int[] friendlyExchVals = exchangeValues(rec, pos, currentCol);
-        int[] enemyExchVals = exchangeValues(rec, pos, Piece.opposite(currentCol).val());
         if (friendlyExchVals.length == 0) return SEEFlag.EQUAL;
+        int[] enemyExchVals = exchangeValues(rec, pos, Piece.opposite(currentCol).val());
         if (enemyExchVals.length == 0) return SEEFlag.WINNING;
 
-        int friendlyIndex = 0;
-        int enemyIndex = 0;
+        // TODO : this func only sees attackers present in start position
+        //          and the exchVals never get updated when sliding pieces are
+        //          unblocked. Could update this to recalculate attackers after
+        //          simulated capture.
+        eval += initCapVal;
+        for (int i = 0; i < friendlyExchVals.length; i++) {
+            if (i == enemyExchVals.length) return SEEFlag.WINNING;
+            eval -= friendlyExchVals[i];
+            eval += enemyExchVals[i];
 
-        eval += initCapVal - friendlyExchVals[friendlyIndex++];
-        if (eval < 0) return SEEFlag.LOSING;
-        while (true) {
-            if ((friendlyIndex == friendlyExchVals.length)
-                    || (enemyIndex == enemyExchVals.length)) {
-                int diff = friendlyExchVals.length - enemyExchVals.length;
-                if (diff > 0) return SEEFlag.WINNING;
-                if (diff < 0) return SEEFlag.LOSING;
-                return SEEFlag.EQUAL;
-            }
-
-            eval += friendlyExchVals[friendlyIndex++] - enemyExchVals[enemyIndex++];
-            if (eval < 0) return SEEFlag.LOSING;
             if (eval > 0) return SEEFlag.WINNING;
+            if (eval < 0) return SEEFlag.LOSING;
         }
+
+        return (eval > 0) ? SEEFlag.WINNING : SEEFlag.EQUAL;
+    }
+
+    private boolean noWinningHeavyCaptures(BoardRecord rec, int col) {
+        if (col == Piece.WHITE.val()) {
+            return !hasWinningCaptures(rec, rec.whiteAttacksR, col) 
+                    && !hasWinningCaptures(rec, rec.whiteAttacksQ, col);
+        } else {
+            return !hasWinningCaptures(rec, rec.blackAttacksR, col) 
+                    && !hasWinningCaptures(rec, rec.blackAttacksQ, col);
+        }
+    }
+
+    private boolean hasWinningCaptures(BoardRecord rec, int[] attacks, int col) {
+        for (int pos : attacks) {
+            if (pos == -1) break;
+            if (rec.board[pos] == Piece.NONE.val()) continue;
+            if (see(rec, pos, col) == SEEFlag.WINNING) return true;
+        }
+        return false;
     }
 
     private int[] exchangeValues(BoardRecord rec, int pos, int col) {

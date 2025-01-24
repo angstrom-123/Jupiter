@@ -73,12 +73,16 @@ public class MoveList {
 
     public boolean contains(int pos) {
         for (Move m : elements) {
-            if (m == null) {
-                return false;
-            }
-            if (m.to == pos) {
-                return true;
-            }
+            if (m == null) return false;
+            if (m.to == pos) return true;
+        }
+        return false;
+    }
+
+    public boolean containsFrom(int pos) {
+        for (Move m : elements) {
+            if (m == null) return false;
+            if (m.from == pos) return true;
         }
         return false;
     }

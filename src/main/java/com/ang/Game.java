@@ -38,8 +38,9 @@ public class Game implements GameInterface {
 
         selected            = -1;
         legalMoves          = new MoveList(0);
-        // String startFEN     = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-        String startFEN     = "3r4/8/3k4/8/8/3K4/8/8";
+        // String startFEN     = "8/1n1n4/1p6/2P4R/8/8/2Q2B2/8";
+        String startFEN     = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+        // String startFEN     = "3r4/8/3k4/8/8/3K4/8/8";
         // String startFEN     = "8/8/3k4/8/2KB4/4r3/8/8"; 
         gameRec             = new BoardRecord(startFEN);
         renderer            = new Renderer(squareSize, renderScale, this);
@@ -61,7 +62,9 @@ public class Game implements GameInterface {
         }
         playerCanMove = true;
 
-        System.out.println(Board.insufficientMaterial(gameRec, Piece.BLACK.val()));
+        // System.out.println("see white 17 " + engineSearch.see(gameRec, 17, Piece.WHITE.val()));
+        // System.out.println("see black 17 " + engineSearch.see(gameRec, 17, Piece.BLACK.val()));
+
     }
 
     public void test(int time) {
