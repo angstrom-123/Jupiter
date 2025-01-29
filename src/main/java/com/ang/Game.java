@@ -62,8 +62,8 @@ public class Game implements GameInterface {
         }
         playerCanMove = true;
 
-        // System.out.println("see white 17 " + engineSearch.see(gameRec, 17, Piece.WHITE.val()));
-        // System.out.println("see black 17 " + engineSearch.see(gameRec, 17, Piece.BLACK.val()));
+        // System.out.println("see white 26 " + engineSearch.see(gameRec, 26, Piece.WHITE.val()));
+        // System.out.println("see black 26 " + engineSearch.see(gameRec, 26, Piece.BLACK.val()));
 
     }
 

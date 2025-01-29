@@ -37,6 +37,25 @@ public enum Piece {
         }
     }
 
+    public static int staticEval(int piece) {
+        switch (piece) {
+        case 1:
+            return Piece.PAWN.staticEval();
+        case 2:
+            return Piece.KNIGHT.staticEval();
+        case 3:
+            return Piece.BISHOP.staticEval();
+        case 4:
+            return Piece.ROOK.staticEval();
+        case 5:
+            return Piece.QUEEN.staticEval();
+        case 6:
+            return Piece.KING.staticEval();
+        default:
+            return 0;
+        }
+    }
+
     public static Piece opposite(int col) {
         if (col == Piece.WHITE.val()) {
             return Piece.BLACK;

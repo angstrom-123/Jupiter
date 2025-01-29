@@ -1,14 +1,10 @@
 package com.ang.Engine;
 
-import javax.lang.model.SourceVersion;
-
 import com.ang.Global;
-import com.ang.Util.*;
 import com.ang.Core.*;
 import com.ang.Core.Moves.*;
 
 // TODO : compare move gen results to StockFish in random positions
-//      - need to allow engine to play as white and black
 
 // TODO : optimization:
 //      - history heuristic
@@ -264,21 +260,15 @@ public class Search {
                 continue;
             }
 
-            if (!goodCapture(rec, move) && (move.flag != MoveFlag.PROMOTE)) {
-                if (see(rec, move.to, col) == SEEFlag.LOSING) {
-                    continue;
-                }
+            if ((move.flag != MoveFlag.PROMOTE) 
+                    && (see(rec, move.to, col) != SEEFlag.WINNING)) {
+                continue;
             }
 
             if ((rec.board[move.to] == Piece.NONE.val())
                     && (noWinningHeavyCaptures(rec, Piece.opposite(col).val()))) {
                 continue;
             }
-
-            // if (noWinningHeavyCaptures(rec, Piece.opposite(col).val())) {
-            //     continue;
-            // }
-
 
             BoardRecord tempRec = rec.copy(); 
             if (Board.tryMove(tempRec, move)) { 
@@ -412,40 +402,34 @@ public class Search {
         return eval;
     }
 
-    public boolean goodCapture(BoardRecord rec, Move move) {
-        if (Board.pieceInSquare(rec, move.from).staticEval() 
-                > Board.pieceInSquare(rec, move.to).staticEval()) {
-            return true; 
-        }
-        return false;
-    }
-
     public SEEFlag see(BoardRecord rec, int pos, int currentCol) {
         if ((rec.board[pos] & 0b11000) == currentCol) return SEEFlag.EQUAL;
 
+        IntList exclude = new IntList(10, -1);
+
         int eval = 0;
-        int initCapVal = Board.pieceInSquare(rec, pos).staticEval();
+        eval += Piece.staticEval(rec.board[pos]);
 
-        int[] friendlyExchVals = exchangeValues(rec, pos, currentCol);
-        if (friendlyExchVals.length == 0) return SEEFlag.EQUAL;
-        int[] enemyExchVals = exchangeValues(rec, pos, Piece.opposite(currentCol).val());
-        if (enemyExchVals.length == 0) return SEEFlag.WINNING;
+        while (true) {
+            int friendlyPos = Board.getLightestAttacker(rec, pos, currentCol, exclude);
+            int enemyPos = Board.getLightestAttacker(rec, pos, Piece.opposite(currentCol).val(), exclude);
+    
+            if (friendlyPos == -1) {
+                if (enemyPos == -1) return SEEFlag.EQUAL;
+                else return SEEFlag.LOSING;
+            } else {
+                if (enemyPos == -1) return SEEFlag.WINNING;
+            }
 
-        // TODO : this func only sees attackers present in start position
-        //          and the exchVals never get updated when sliding pieces are
-        //          unblocked. Could update this to recalculate attackers after
-        //          simulated capture.
-        eval += initCapVal;
-        for (int i = 0; i < friendlyExchVals.length; i++) {
-            if (i == enemyExchVals.length) return SEEFlag.WINNING;
-            eval -= friendlyExchVals[i];
-            eval += enemyExchVals[i];
+            eval -= Piece.staticEval(rec.board[friendlyPos] & 0b11000);
+            eval += Piece.staticEval(rec.board[enemyPos] & 0b11000);
+
+            exclude.add(friendlyPos);
+            exclude.add(enemyPos);
 
             if (eval > 0) return SEEFlag.WINNING;
             if (eval < 0) return SEEFlag.LOSING;
         }
-
-        return (eval > 0) ? SEEFlag.WINNING : SEEFlag.EQUAL;
     }
 
     private boolean noWinningHeavyCaptures(BoardRecord rec, int col) {

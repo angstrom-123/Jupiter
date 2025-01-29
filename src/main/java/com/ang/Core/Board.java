@@ -130,27 +130,6 @@ public class Board {
         return GameFlag.CHECKMATE;
     }
 
-    // public static MoveList seeAttacks(BoardRecord rec, int pos, int col, MoveList exclude) {
-    //     MoveList out = new MoveList(10);
-
-    //     for (int i = 0; i < rec.allPieces.length(); i++) {
-    //         int piecePos = rec.allPieces.at(i);
-    //         if ((rec.board[piecePos] & 0b11000) != col) continue;
-
-    //         MoveList moves = PieceMover.moves(rec, piecePos); 
-    //         for (int j = 0; j < moves.length(); j++) {
-    //             Move move = moves.at(j);
-    //             if (move.attack && (move.to == pos)) {
-    //                 out.add(move);
-    //             } else {
-    //                 int piece = rec.board[piecePos] & 0b111;
-    //                 int[] xRaySquares = xRaySquares(rec, piece, piecePos, pos);
-
-    //             }
-    //         }
-    //     }
-    // }
-
     public static boolean canXray(int piece, int from, int to) {
         int diff = Math.abs(from - to);
         boolean inSameRow = (from % 8) == (to % 8);
@@ -173,88 +152,105 @@ public class Board {
         }
     }
 
-    // public static int[] xRaySquares(BoardRecord rec, int piece, int from, int to, MoveList exclude) {
-    //     int rowDelta = (int) (Math.floor(from / 8) - Math.floor(to / 8));
-    //     int colDelta = (from % 8) - (to % 8);
+    public static boolean doesXray(BoardRecord rec, int piece, int from, int to, IntList exclude) {
+        int rowDelta = (int) (Math.floor(from / 8) - Math.floor(to / 8));
+        int colDelta = (from % 8) - (to % 8);
         
-    //     int[] out = new int[7];
-    //     for (int i = 0; i < out.length; i++) out[i] = -1;
-    //     int offset;
+        if (!canXray(piece, from, to)) return false;
 
-    //     switch (piece) {
-    //     case 1: case 2: case 6: // pawn, knight, king
-    //         return new int[0];
-    //     case 3:
-    //         return new int[0];
-    //     case 4:
-    //         if (rowDelta == 0) {
-    //             offset = (colDelta < 0) ? -8 : 8;
-    //         } else if (colDelta == 0) {
-    //             offset = (rowDelta < 0) ? -1 : 1;
-    //         } else {
-    //             return new int[0];
-    //         }
+        int offset;
+        switch (piece) {
+        case 1: case 2: case 6: // pawn, knight, king
+            return false;
+        case 3:
+            return false;
+        case 4:
+            if (rowDelta == 0) {
+                offset = (colDelta < 0) ? -8 : 8;
+            } else if (colDelta == 0) {
+                offset = (rowDelta < 0) ? -1 : 1;
+            } else {
+                return false;
+            }
 
-    //         for (int i = 0; i < out.length; i++) {
-    //             if (i > 0) {
-    //                 if (!Board.inBounds(out[i - 1], offset)) break; 
-    //             } else {
-    //                 if (!Board.inBounds(from, offset)) break;
-    //             }
+            for (int i = 0; i < 7; i++) {
+                if (!Board.inBounds(from + (offset * i), offset)) break; 
 
-    //             int targetSquare = from + (offset * (i + 1));
+                int targetSquare = from + (offset * (i + 1));
+                int targetCol = rec.board[targetSquare] & 0b11000;
+                int pieceCol = rec.board[from] & 0b11000;
+                if (!exclude.contains(targetSquare)) {
+                    if (targetCol == pieceCol) return false;
+                    if (targetCol == Piece.opposite(pieceCol).val()) {
+                        if (targetSquare == to) return true;
+                        return false;
+                    } 
+                }
+                if (targetSquare == to) return true;
+            }
+            return false;
+        case 5: // queen
+            int diff = Math.abs(to - from);
+            if ((diff % 7 == 0) || (diff % 9 == 0)) { // diagonal
+                if (colDelta < 0) {
+                    offset = (rowDelta < 0) ? -9 : 7;
+                } else {
+                    offset = (rowDelta < 0) ? -7 : 9;
+                }
+            } else if (rowDelta == 0) {
+                offset = (colDelta < 0) ? -1 : 1;
+            } else if (colDelta == 0) {
+                offset = (rowDelta < 0) ? -8 : 8;
+            } else {
+                return false;
+            }
 
-    //             int targetCol = rec.board[targetSquare] & 0b11000;
-    //             int pieceCol = rec.board[from] & 0b11000;
-    //             if (targetCol == pieceCol) break;
-    //             if ((targetCol == Piece.opposite(pieceCol).val()) 
-    //                     && (!exclude.containsFrom(targetSquare))) break;
-                
-    //             out[i] = targetSquare;
-    //         }
+            for (int i = 0; i < 7; i++) {
+                if (!Board.inBounds(from + (offset * i), offset)) return false; 
 
-    //         return out;
-    //     case 5: // queen
-    //         int diff = Math.abs(to - from);
-    //         if ((diff % 7 == 0) || (diff % 9 == 0)) { // diagonal
-    //             if (colDelta < 0) {
-    //                 offset = (rowDelta < 0) ? -9 : 7;
-    //             } else {
-    //                 offset = (rowDelta < 0) ? -7 : 9;
-    //             }
-    //         } else if (rowDelta == 0) {
+                int targetSquare = from + (offset * (i + 1));
+                int targetCol = rec.board[targetSquare] & 0b11000;
+                int pieceCol = rec.board[from] & 0b11000;
+                if (!exclude.contains(targetSquare)) {
+                    if (targetCol == pieceCol) break;
+                    if (targetCol == Piece.opposite(pieceCol).val()) {
+                        if (targetSquare == to) return true;
+                        return false;
+                    } 
+                }
+                if (targetSquare == to) return true;
+            }
+            return false;
+        default:
+            break;
+        }
 
-    //         } else if (colDelta == 0) {
+        return false;
+    }
 
-    //         } else {
-    //             return new int[0];
-    //         }
+    public static int getLightestAttacker(BoardRecord rec, int pos, int col, IntList exclude) {
+        int minVal = Global.INFINITY;
+        int minPos = -1;
 
-    //         for (int i = 0; i < out.length; i++) {
-    //             if (i > 0) {
-    //                 if (!Board.inBounds(out[i - 1], offset)) break; 
-    //             } else {
-    //                 if (!Board.inBounds(from, offset)) break;
-    //             }
+        MoveList moves = Board.allMoves(rec, col);
+        for (int i = 0; i < moves.length(); i++) {
+            Move m = moves.at(i);
 
-    //             int targetSquare = from + (offset * (i + 1));
+            if (!m.attack || (m.flag == MoveFlag.ONLY_ATTACK)) continue;
+            if (exclude.contains(m.from)) continue;
 
-    //             int targetCol = rec.board[targetSquare] & 0b11000;
-    //             int pieceCol = rec.board[from] & 0b11000;
-    //             if (targetCol == pieceCol) break;
-    //             if ((targetCol == Piece.opposite(pieceCol).val()) 
-    //                     && (!exclude.containsFrom(targetSquare))) break;
-                
-    //             out[i] = targetSquare;
-    //         }
+            int piece = rec.board[m.from] & 0b11000; 
+            if ((m.to == pos) || (Board.doesXray(rec, piece, m.from, pos, exclude))) {
+                int se = Piece.staticEval(piece);
+                if (se < minVal) {
+                    minVal = se;
+                    minPos = m.from;
+                }
+            }
+        }
 
-    //         return out;
-    //     default:
-    //         break;
-    //     }
-
-    //     return new int[0];
-    // }
+        return minPos;
+    }
 
     public static boolean heavyCanCapture(BoardRecord rec, int col) {
         for (int i = 0; i < rec.allPieces.length(); i++) {
