@@ -132,10 +132,10 @@ public class Game implements GameInterface {
                 renderer.drawBoard();
                 renderer.drawAllSprites(gameRec);
                 renderer.drawSquareNums();
-                gameRec.printBoard(); // debug
+                // gameRec.printBoard(); // debug
 
             } else {
-                System.err.println("Player did not make a valid move");
+                System.err.println("Player move invalid");
                 return;
             }
             
@@ -163,7 +163,7 @@ public class Game implements GameInterface {
                 renderer.drawBoard();
                 renderer.drawAllSprites(gameRec);
                 renderer.drawSquareNums();
-                gameRec.printBoard(); // debug
+                // gameRec.printBoard(); // debug
             } else {
                 System.err.println("Engine could not make a valid move");
                 return;

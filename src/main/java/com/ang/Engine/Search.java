@@ -67,27 +67,13 @@ public class Search {
                     System.out.println("white " + evaluate(rec, Piece.WHITE.val())
                             + " black " + evaluate(rec, Piece.BLACK.val()));
                     System.out.println("searched " + this.positionsSearched + " in "
-                            + ((System.currentTimeMillis() - actualStartTime) / 1000) 
+                            + ((System.currentTimeMillis() - actualStartTime) / 1000L) 
                             + " s");
 
                     System.out.println("principal variation");
                     for (int j = 0; j < pvLine.length; j++) {
-                        Move m = pvLine.moves[j];
-                        if (m == null) {
-                            System.out.println("failed to get m at 79");
-                        }
-                        // System.out.println(m.from + " to " + m.to);
                         System.out.println(pvLine.algebraics[j]);
                         System.out.println();
-                    }
-
-                    for (int j = 0; j < 64; j++) {
-                        if (j % 8 == 0) System.out.println();
-                        if (j < 10) {
-                            System.out.print(j + "  ");
-                        } else {
-                            System.out.print(j + " ");
-                        }
                     }
                     
                     return lastPlyBestMove;
@@ -232,7 +218,7 @@ public class Search {
     }
 
     private int quiesce(BoardRecord rec, int alpha, int beta, int col, int depth, PVLine pLine) {
-        int maxDepth = 10;
+        int maxDepth = 5;
         
         int standPat = evaluate(rec, col);
         int bestEval = standPat;
@@ -265,10 +251,7 @@ public class Search {
                 continue;
             }
 
-            if ((rec.board[move.to] == Piece.NONE.val())
-                    && (noWinningHeavyCaptures(rec, Piece.opposite(col).val()))) {
-                continue;
-            }
+            if (rec.board[move.to] == Piece.NONE.val()) continue;
 
             BoardRecord tempRec = rec.copy(); 
             if (Board.tryMove(tempRec, move)) { 
@@ -430,85 +413,6 @@ public class Search {
             if (eval > 0) return SEEFlag.WINNING;
             if (eval < 0) return SEEFlag.LOSING;
         }
-    }
-
-    private boolean noWinningHeavyCaptures(BoardRecord rec, int col) {
-        if (col == Piece.WHITE.val()) {
-            return !hasWinningCaptures(rec, rec.whiteAttacksR, col) 
-                    && !hasWinningCaptures(rec, rec.whiteAttacksQ, col);
-        } else {
-            return !hasWinningCaptures(rec, rec.blackAttacksR, col) 
-                    && !hasWinningCaptures(rec, rec.blackAttacksQ, col);
-        }
-    }
-
-    private boolean hasWinningCaptures(BoardRecord rec, int[] attacks, int col) {
-        for (int pos : attacks) {
-            if (pos == -1) break;
-            if (rec.board[pos] == Piece.NONE.val()) continue;
-            if (see(rec, pos, col) == SEEFlag.WINNING) return true;
-        }
-        return false;
-    }
-
-    private int[] exchangeValues(BoardRecord rec, int pos, int col) {
-        int[] out;
-
-        int pawns   = 0;
-        int knights = 0;
-        int bishops = 0;
-        int rooks   = 0;
-        int queens  = 0;
-        int kings   = 0;
-        int len     = 0;
-
-        if (col == Piece.WHITE.val()) {
-            pawns   = rec.whiteAttacksP[pos];
-            knights = rec.whiteAttacksN[pos];
-            bishops = rec.whiteAttacksB[pos];
-            rooks   = rec.whiteAttacksR[pos];
-            queens  = rec.whiteAttacksQ[pos];
-            kings   = rec.whiteAttacksK[pos];
-            len     = rec.whiteAttacks[pos];
-        } else {
-            pawns   = rec.blackAttacksP[pos];
-            knights = rec.blackAttacksN[pos];
-            bishops = rec.blackAttacksB[pos];
-            rooks   = rec.blackAttacksR[pos];
-            queens  = rec.blackAttacksQ[pos];
-            kings   = rec.blackAttacksK[pos];
-            len     = rec.blackAttacks[pos];
-        }
-
-        if (len == -1) {
-            System.out.println("failure");
-            rec.showPositions();
-        }
-        out = new int[len];
-
-        for (int i = 0; i < out.length; i++) {
-            if (pawns > 0) {
-                out[i] = Piece.PAWN.staticEval();
-                pawns--;
-            } else if (knights > 0) {
-                out[i] = Piece.KNIGHT.staticEval();
-                knights--;
-            } else if (bishops > 0) {
-                out[i] = Piece.BISHOP.staticEval();
-                bishops--;
-            } else if (rooks > 0) {
-                out[i] = Piece.ROOK.staticEval();
-                rooks--;
-            } else if (queens > 0) {
-                out[i] = Piece.QUEEN.staticEval();
-                queens--;
-            } else if (kings > 0) {
-                out[i] = Piece.KING.staticEval();
-                kings--;
-            }
-        }
-
-        return out;
     }
 
     private int pieceValueEval(BoardRecord rec) {
