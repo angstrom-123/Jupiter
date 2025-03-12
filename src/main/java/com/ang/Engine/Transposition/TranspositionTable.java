@@ -72,15 +72,19 @@ public class TranspositionTable extends ZobristTable {
      * @param hash the position hash to enter into the transposition table
      */
     public void saveHash(TableEntry entry, int hash) {
-        TableEntry oldEntry = searchTable(hash);
-        if (oldEntry == null) {
-            hashes.put(hash, entry);
-            size++;
-        } else if ((entry.nodeType.precedence() > oldEntry.nodeType.precedence())
-                || (entry.depth > oldEntry.depth)) {
-            Global.ttColisions++;
-            hashes.remove(hash);
-            hashes.put(hash, entry);
+        try {
+            TableEntry oldEntry = searchTable(hash);
+            if (oldEntry == null) {
+                hashes.put(hash, entry);
+                size++;
+            } else if ((entry.nodeType.precedence() > oldEntry.nodeType.precedence())
+                    || (entry.depth > oldEntry.depth)) {
+                Global.ttColisions++;
+                hashes.remove(hash);
+                hashes.put(hash, entry);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

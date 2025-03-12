@@ -47,8 +47,15 @@ public class Search {
                 continue;
 
             }
-            int eval = evalSearch(tempRec, -beta, -alpha, Piece.opposite(col).val(), 
+            int eval;
+            if (col == Piece.WHITE.val()) {
+                eval = -evalSearch(tempRec, -beta, -alpha, Piece.opposite(col).val(), 
                     0, maxDepth, altMoveOrdering, endTime);
+            } else {
+                eval = evalSearch(tempRec, alpha, beta, Piece.opposite(col).val(), 
+                    0, maxDepth, altMoveOrdering, endTime);
+            }
+            
             if (col == Piece.BLACK.val()) {
                 eval = -eval;
             }

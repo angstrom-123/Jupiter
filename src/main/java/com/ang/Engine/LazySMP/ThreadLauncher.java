@@ -18,17 +18,15 @@ import java.util.concurrent.ExecutorService;
  * Class for launching a search in a position
  */
 public class ThreadLauncher implements Runnable, ThreadListener {
-    private final int MAX_DEPTH = 8;
-    private final int PERMUTATION_COUNT = 2; // amount of repeat workers at same depth
-
-    private SearchResult[] searchResults = new SearchResult[(MAX_DEPTH - 1) * PERMUTATION_COUNT];
-    private ExecutorService execService = Executors.newFixedThreadPool((MAX_DEPTH - 1) * PERMUTATION_COUNT);
-    private BlockingQueue<Runnable> taskQueue = new LinkedBlockingQueue<>();
-    private boolean searchDone = false;
-    private Worker[] workers = new Worker[(MAX_DEPTH - 1) * PERMUTATION_COUNT];
-    private int workersFinished = 0;
-    private int workersLaunched = 0;
-
+    private final int               MAX_DEPTH       = 8;
+    private final int               PERM_COUNT      = 2; // amount of repeat workers at same depth
+    private SearchResult[]          searchResults   = new SearchResult[(MAX_DEPTH - 1) * PERM_COUNT];
+    private ExecutorService         execService     = Executors.newFixedThreadPool((MAX_DEPTH - 1) * PERM_COUNT);
+    private BlockingQueue<Runnable> taskQueue       = new LinkedBlockingQueue<>();
+    private boolean                 searchDone      = false;
+    private Worker[]                workers         = new Worker[(MAX_DEPTH - 1) * PERM_COUNT];
+    private int                     workersFinished = 0;
+    private int                     workersLaunched = 0;
     private ThreadListener          listener;
     private int                     col;
     private BoardRecord             rec;
@@ -151,7 +149,7 @@ public class ThreadLauncher implements Runnable, ThreadListener {
      * @param beta the upper bound for evaluation to accept
      */
     private void reSearch(BoardRecord rec, int col, int alpha, int beta) {
-        for (int i = 0; i < (MAX_DEPTH - 1) * PERMUTATION_COUNT; i++) {
+        for (int i = 0; i < (MAX_DEPTH - 1) * PERM_COUNT; i++) {
             int index = getFreeIndex();
             if (index == -1) {
                 System.err.println("Thread cap reached");
@@ -203,7 +201,7 @@ public class ThreadLauncher implements Runnable, ThreadListener {
      * @return the free index, or -1 if there are no free indices
      */
     private int getFreeIndex() {
-        for (int i = 0; i < ((MAX_DEPTH - 1) * PERMUTATION_COUNT); i++) {
+        for (int i = 0; i < ((MAX_DEPTH - 1) * PERM_COUNT); i++) {
             if (workers[i] == null) {
                 return i;
 
@@ -219,13 +217,6 @@ public class ThreadLauncher implements Runnable, ThreadListener {
      * @param index the index of the worker in workers[]
      */
     private void addTask(Runnable task, int index) {
-        if (index > 0) {
-            System.out.print("\r");
-        }
-        System.out.print((index + 1) + "/" + (MAX_DEPTH * PERMUTATION_COUNT - 2));
-        if (index == MAX_DEPTH * PERMUTATION_COUNT - 3) {
-            System.out.println("\n\n==============================\n");
-        }
         if (execService.isShutdown()) {
             System.err.println("Cannot add more tasks, Executor is shut down");
             return;
@@ -256,7 +247,7 @@ public class ThreadLauncher implements Runnable, ThreadListener {
             }
             if (moveScores.length == 0) {
                 bestMoves.add(sr.move);
-                moveScores[0] = 1;
+                moveScores[0] = weightedMoveScore(sr);
             } else {
                 boolean found = false;
                 for (int j = 0; j < bestMoves.length(); j++) {
@@ -302,9 +293,9 @@ public class ThreadLauncher implements Runnable, ThreadListener {
     private int weightedMoveScore(SearchResult sr) {
         final int BASE_SCORE = 100;
         int weightedScore = BASE_SCORE;
-        weightedScore *= (1 + (sr.depth / 10));
+        weightedScore = (int) Math.round(weightedScore * (1.1 + (sr.depth / 10)));
         weightedScore += (sr.eval / 50);
-        return (int) Math.round(weightedScore);
+        return weightedScore;
 
     }
 }
