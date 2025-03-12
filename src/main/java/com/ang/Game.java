@@ -2,10 +2,11 @@ package com.ang;
 
 import com.ang.Core.*;
 import com.ang.Core.Moves.*;
-import com.ang.Engine.*;
+import com.ang.Engine.LazySMP.ThreadLauncher;
+import com.ang.Engine.LazySMP.ThreadListener;
+import com.ang.Engine.LazySMP.Worker;
 import com.ang.Graphics.Renderer;
 import com.ang.Util.GameInterface;
-import com.ang.Engine.ThreadLauncher;
 
 /**
  * Class handling the player's interaction with the game and the game loop

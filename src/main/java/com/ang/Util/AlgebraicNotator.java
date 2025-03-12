@@ -1,4 +1,4 @@
-package com.ang.Engine;
+package com.ang.Util;
 
 import com.ang.Core.*;
 import com.ang.Core.Moves.*;

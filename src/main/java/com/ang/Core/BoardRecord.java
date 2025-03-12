@@ -74,7 +74,6 @@ public class BoardRecord {
             }
             addPosition(piece, i);
         }
-        BitBoard.displayBB(whiteAttacks);
     }
 
     /**
@@ -339,7 +338,7 @@ public class BoardRecord {
 
             default:
                 break;
-                
+
             }
         }
         System.out.println();

@@ -1,4 +1,4 @@
-package com.ang.Engine;
+package com.ang.Core;
 
 /**
  * Enum representing different outcomes of the game

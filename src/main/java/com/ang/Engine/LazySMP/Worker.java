@@ -1,8 +1,9 @@
-package com.ang.Engine;
+package com.ang.Engine.LazySMP;
 
 import com.ang.Global;
 import com.ang.Core.*;
 import com.ang.Core.Moves.Move;
+import com.ang.Engine.*;
 
 /**
  * Thread worker that performs a single search to a specific depth in LazySMP

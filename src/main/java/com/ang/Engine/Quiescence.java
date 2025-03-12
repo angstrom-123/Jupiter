@@ -3,6 +3,8 @@ package com.ang.Engine;
 import com.ang.Global;
 import com.ang.Core.*;
 import com.ang.Core.Moves.*;
+import com.ang.Engine.Eval.*;
+import com.ang.Engine.Transposition.*;
 
 /**
  * Class for conducting a quiescence search (a search where heuristic cut-offs

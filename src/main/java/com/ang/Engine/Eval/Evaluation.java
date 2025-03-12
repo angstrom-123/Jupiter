@@ -1,7 +1,8 @@
-package com.ang.Engine;
+package com.ang.Engine.Eval;
 
 import com.ang.Global;
 import com.ang.Core.*;
+import com.ang.Engine.Transposition.*;
 
 /**
  * Class for estimating how good a given position is

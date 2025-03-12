@@ -2,9 +2,9 @@ package com.ang.Engine;
 
 import com.ang.Global;
 import com.ang.Core.*;
-import com.ang.Core.Moves.Move;
-import com.ang.Core.Moves.MoveFlag;
-import com.ang.Core.Moves.MoveList;
+import com.ang.Core.Moves.*;
+import com.ang.Engine.Transposition.*;
+import com.ang.Util.AlgebraicNotator;
 
 /**
  * Class for a recursive search using alpha beta pruning
@@ -72,9 +72,9 @@ public class Search {
                 System.out.println("Engine could not find valid move");
             }
         }
-        System.out.println("Search to depth " + maxDepth + ": ");
-        System.out.println("    - Move: " + bestMove.from + " to " + bestMove.to);
-        System.out.println("    - Eval: " + bestEval);
+        System.out.println("Search to depth " + maxDepth + ": \n"
+                + "    - Move: " + AlgebraicNotator.moveToAlgeb(rec, bestMove) + "\n"
+                + "    - Eval: " + bestEval + "\n");
         return new SearchResult(bestMove, bestEval, maxDepth);
 
     }

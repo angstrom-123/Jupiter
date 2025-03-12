@@ -3,7 +3,6 @@ package com.ang.Engine.Transposition;
 import com.ang.Global;
 import com.ang.Core.BoardRecord;
 import com.ang.Core.Piece;
-import com.ang.Engine.TableEntry;
 
 import java.util.HashMap;
 

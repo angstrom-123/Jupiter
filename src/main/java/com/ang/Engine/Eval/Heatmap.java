@@ -1,4 +1,4 @@
-package com.ang.Engine;
+package com.ang.Engine.Eval;
 
 /**
  * Class holding lookups for positional bonuses for each piece

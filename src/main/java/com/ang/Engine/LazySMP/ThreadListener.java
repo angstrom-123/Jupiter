@@ -1,4 +1,4 @@
-package com.ang.Engine;
+package com.ang.Engine.LazySMP;
 
 import com.ang.Core.Moves.Move;
 

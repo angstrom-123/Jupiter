@@ -2,7 +2,6 @@ package com.ang.Core;
 
 import com.ang.Global;
 import com.ang.Core.Moves.*;
-import com.ang.Engine.GameFlag;
 
 /**
  * Class containing functions to do with the virtual board and the pieces on it

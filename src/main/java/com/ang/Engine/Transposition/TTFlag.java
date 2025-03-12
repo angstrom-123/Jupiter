@@ -1,4 +1,4 @@
-package com.ang.Engine;
+package com.ang.Engine.Transposition;
 
 /**
  * Enum for flags representing different node types in the search tree
@@ -23,6 +23,6 @@ public enum TTFlag {
      */
     public int precedence() {
         return precedence;
-        
+
     }
 }

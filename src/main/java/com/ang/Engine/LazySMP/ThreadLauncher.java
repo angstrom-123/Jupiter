@@ -1,10 +1,13 @@
-package com.ang.Engine;
+package com.ang.Engine.LazySMP;
 
 import com.ang.Global;
 import com.ang.Core.*;
 import com.ang.Core.Moves.*;
-import com.ang.Engine.Transposition.TranspositionTable;
+import com.ang.Engine.*;
+import com.ang.Engine.Eval.*;
+import com.ang.Engine.Transposition.*;
 import com.ang.Util.StringManip;
+import com.ang.Util.AlgebraicNotator;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
@@ -69,8 +72,8 @@ public class ThreadLauncher implements Runnable, ThreadListener {
      */
     @Override
     public void run() {
+        System.out.println("Launching workers:");
         endTime = System.currentTimeMillis() + searchTime;
-        System.out.println("start time " + System.currentTimeMillis() + " end " + endTime);
         AspirationWindow aspWin = searchRoot(rec, col);
         reSearch(rec, col, aspWin.alpha, aspWin.beta);
         while (!searchDone) {
@@ -96,15 +99,13 @@ public class ThreadLauncher implements Runnable, ThreadListener {
             }
         }
         if (Global.tTable.size > 500000) {
-            System.out.println("Clearing Transposition Table");
             Global.tTable = new TranspositionTable();
         }
+        System.out.println("==============================\n");
         Move bestMove = analyseSearchResults();
-        System.out.println("==============================");
-        System.out.println(StringManip.centre(
-                "Final Engine Move: " + bestMove.from + " to " + bestMove.to
-                , 30));
-        System.out.println("==============================");
+        System.out.println("==============================\n"
+                + StringManip.centre(AlgebraicNotator.moveToAlgeb(rec, bestMove), 30) + "\n"
+                + "==============================");
         listener.searchComplete(bestMove);
     }
 
@@ -162,14 +163,10 @@ public class ThreadLauncher implements Runnable, ThreadListener {
             w.setCol(col);
             w.setRoot(rec);
             w.setEndTime(endTime);
-            System.out.println();
-            System.out.println("New Search");
             if (i > (MAX_DEPTH - 2)) {
-                System.out.println("Worker to depth: " + (i - MAX_DEPTH + 3));
                 w.setDepth(i - MAX_DEPTH + 2 + 1);
                 w.altMoveOrdering(true);
             } else {
-                System.out.println("Worker to depth: " + (i + 2));
                 w.setDepth(i + 2);
                 w.altMoveOrdering(false);
             }
@@ -222,9 +219,15 @@ public class ThreadLauncher implements Runnable, ThreadListener {
      * @param index the index of the worker in workers[]
      */
     private void addTask(Runnable task, int index) {
-        System.out.println("Starting Thread");
+        if (index > 0) {
+            System.out.print("\r");
+        }
+        System.out.print((index + 1) + "/" + (MAX_DEPTH * PERMUTATION_COUNT - 2));
+        if (index == MAX_DEPTH * PERMUTATION_COUNT - 3) {
+            System.out.println("\n\n==============================\n");
+        }
         if (execService.isShutdown()) {
-            System.err.println("Cannot add more tasks, Executor has shut down");
+            System.err.println("Cannot add more tasks, Executor is shut down");
             return;
 
         }
@@ -283,9 +286,9 @@ public class ThreadLauncher implements Runnable, ThreadListener {
                 break;
 
             }
-            System.out.println("Considering: " + bestMoves.at(i).from + " to " 
-                    + bestMoves.at(i).to);
-            System.out.println("    - Score: " + moveScores[i]);
+            System.out.println("Considering:\n" 
+                    + "    - Move: " + AlgebraicNotator.moveToAlgeb(rec, bestMoves.at(i)) + "\n" 
+                    + "    - Score: " + moveScores[i] + "\n");
         }
         return bestMove;
 
