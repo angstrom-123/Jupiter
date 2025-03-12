@@ -2,366 +2,157 @@ package com.ang.Engine;
 
 import com.ang.Global;
 import com.ang.Core.*;
-import com.ang.Core.Moves.*;
-
-// TODO : compare move gen results to StockFish in random positions
-
-// TODO : optimization:
-//      - history heuristic
-//      - killer moves
-//      - pawn position evaluation
-//      - futility pruning
-//      - multithreading
-
-// TODO : fixes
-//      - test the transposition table / node types
-//      - bot doesn't find mate well in endgames, usually stalemate - Fixed? test!
+import com.ang.Core.Moves.Move;
+import com.ang.Core.Moves.MoveFlag;
+import com.ang.Core.Moves.MoveList;
 
 /**
- * Class for the search function of the engine
+ * Class for a recursive search using alpha beta pruning
  */
-public class Search {  
-    public int      engineCol;
-
-    private int     contemptFactor = 0;
-    private int     timeLimit;
-    private int     playerCol;
-    private int     positionsSearched;
-    private int     maxDepth;
-    private long    endTime;
-
-    private PVLine pvLine = new PVLine();
-
+public class Search {
     /**
-     * Constructs search
-     * @param searchTime max time to search for a move
-     * @param col colour that the engine plays as
+     * Starts a search in a given position
+     * @param rec the position to search in
+     * @param alpha the lower bound of evaluation to accept
+     * @param beta the upper bound of evaluation to accept
+     * @param col the colour to search for
+     * @param maxDepth the depth to search to
+     * @param altMoveOrdering use standard or random move ordering
+     * @param endTime the time to end the search (System.currentTimeMillis() + searchTime)
+     * @return SearchResult containing best move, evaluation, and depth
      */
-    public Search(int searchTime, Piece col) {
-        this(searchTime, col.val());
-    }
-    public Search(int searchTime, int col) {
-        this.timeLimit = searchTime;
-        this.engineCol = col;
-        this.playerCol = Piece.WHITE.val();
-    }
-
-    /**
-     * Attempts to fund the best move in a given position
-     * @param rec BoardRecord representing the position
-     * @return the best move that the engine finds
-     */
-    public Move generateMove(BoardRecord rec) {
-        long actualStartTime = System.currentTimeMillis();
-        endTime = System.currentTimeMillis() + timeLimit;
-
-        this.positionsSearched = 0;
-
-        Move lastPlyBestMove = Move.invalid();
-        maxDepth = 1;
-        while (true) {
-            PVLine line = new PVLine();
-
-            int bestEval = -Global.INFINITY;
-
-            Move bestMove = Move.invalid();         
-            MoveList moves = Board.allMoves(rec, engineCol);
-            moves = orderMoves(rec, moves, engineCol);
-            for (int i = 0; i < moves.length(); i++) {
-                if ((System.currentTimeMillis() >= endTime)
-                        && (maxDepth > 2)) {
-                    System.out.println("maximum complete depth: " 
-                            + (maxDepth - 1));
-                    System.out.println("final move from: " 
-                            + lastPlyBestMove.from + " to: " + lastPlyBestMove.to 
-                            + " with eval " + bestEval);
-                    System.out.println("white " + Evaluation.evaluate(rec, Piece.WHITE.val())
-                            + " black " + Evaluation.evaluate(rec, Piece.BLACK.val()));
-                    System.out.println("searched " + this.positionsSearched + " in "
-                            + ((System.currentTimeMillis() - actualStartTime) / 1000L) 
-                            + " s");
-
-                    System.out.println("principal variation");
-                    for (int j = 0; j < pvLine.length; j++) {
-                        System.out.println(pvLine.algebraics[j]);
-                        System.out.println();
-                    }
-                    
-                    return lastPlyBestMove;
-                }
-
-                Move m = moves.at(i);
-                if (m.flag == MoveFlag.ONLY_ATTACK) {
-                    continue;
-                }
-
-                BoardRecord tempRec = rec.copy();
-                
-                if (Board.tryMove(tempRec, m)) {
-                    int eval;
-
-                    switch (Board.endState(tempRec, engineCol)) {
-                    case DRAW:
-                        eval = contemptFactor;
-                        break;
-                    case CHECKMATE:
-                        eval = -Global.INFINITY;
-                        break;
-                    default:
-                        eval = alphaBetaNega(tempRec, 
-                                -Global.INFINITY, Global.INFINITY, 
-                                playerCol, 0, line);
-                        break;
-                    }
-                    
-                    if (engineCol == Piece.BLACK.val()) {
-                        eval = -eval;
-                    }
-                    if (eval > bestEval) { // always pv
-                        pvLine.moves[0] = m;
-                        pvLine.algebraics[0] = AlgebraicNotator.moveToAlgeb(rec, m);
-                        for (int j = 0; j < line.length; j++) {
-                            pvLine.moves[j + 1] = line.moves[j];
-                            pvLine.algebraics[j + 1] = line.algebraics[j];
-                        }
-                        pvLine.length = line.length + 1;
-
-                        bestEval = eval;
-                        bestMove = m;
-
-                        System.out.println("depth: " + maxDepth + " eval: " 
-                                + eval + " from: " + m.from+" to: " + m.to); 
-                    }
-                }
-            }
-
-            if (bestMove.isInvalid()) {
-                return lastPlyBestMove;
-            }
-
-            lastPlyBestMove = bestMove;
-            maxDepth++;
-        }
-    }
-
-    /**
-     * NegaMax tree search using Alpha/Beta Pruning
-     * @param rec BoardRecord representing the position to search from
-     * @param alpha evaluation lower bound
-     * @param beta evaluation upper bound
-     * @param col colour to move in this position
-     * @param depth current search depth
-     * @param pLine principal line that is being explored
-     * @return
-     */
-    private int alphaBetaNega(BoardRecord rec, int alpha, int beta, 
-            int col, int depth, PVLine pLine) {
-        
-        boolean foundMove = false;
+    public static SearchResult search(BoardRecord rec, int alpha, int beta, int col, 
+            int maxDepth, boolean altMoveOrdering, long endTime) {
         int bestEval = -Global.INFINITY;
-        PVLine line = new PVLine();
-
-        if (depth == maxDepth) {
-            pLine.length = 0;
-            return quiesce(rec, alpha, beta, col, depth, line);
+        Move bestMove = Move.invalid();
+        MoveList moves = Board.allMoves(rec, col);
+        if (!altMoveOrdering) {
+            moves = orderMoves(rec, col, moves);
+        } else {
+            moves.randomize();
         }
-
-        MoveList moves  = Board.allMoves(rec, col);
-        moves = orderMoves(rec, moves, col);
         for (int i = 0; i < moves.length(); i++) {
             if (System.currentTimeMillis() >= endTime) {
-                foundMove = true;
-                break;
-            }
-            Move move = moves.at(i);
-            if (move.flag == MoveFlag.ONLY_ATTACK) {
-                continue;
+                return new SearchResult(Move.invalid(), -Global.INFINITY, 0);
+
             }
 
+            Move m = moves.at(i);
+            if (m.flag == MoveFlag.ONLY_ATTACK) {
+                continue;
+
+            }
             BoardRecord tempRec = rec.copy();
-            if (Board.tryMove(tempRec, move)) {
-                this.positionsSearched++;
-                foundMove = true;
-                int eval = -alphaBetaNega(tempRec, -beta, -alpha, 
-                        Piece.opposite(col).val(), depth + 1, line);
-               
-                if (eval > bestEval) {
-                    bestEval = eval; 
-                    if (eval > alpha) {
-                        alpha = eval;
-                        // save pv node
-                        pLine.moves[0] = move;
-                        pLine.algebraics[0] = AlgebraicNotator.moveToAlgeb(rec, move);
-                        for (int j = 0; j < line.length; j++) {
-                            pLine.moves[j + 1] = line.moves[j];
-                            pLine.algebraics[j + 1] = line.algebraics[j];
-                        }
-                        pLine.length = line.length + 1;
-                        // save to transposition table
-                        TableEntry te = new TableEntry(TTFlag.PV, move, 
-                                eval, depth, 0);
-                        Global.tTable.saveHash(te, tempRec, col);
-                    } else { // fail low (upper bound)
-                        // save to transposition table
-                        TableEntry te = new TableEntry(TTFlag.ALL, move, 
-                                eval, depth, 0);
-                        Global.tTable.saveHash(te, tempRec, col);
-                    }
-                }
-                if (eval >= beta) { // fail high (lower bound)
-                    // save to transposition table
-                    TableEntry te = new TableEntry(TTFlag.CUT, move, 
-                            eval, depth, 0);
-                    Global.tTable.saveHash(te, tempRec, col);
-                    return beta;
-                }
-            }
-        }
+            if (!Board.tryMove(tempRec, m)) {
+                continue;
 
-        switch (Board.endState(rec, col)) {
-        case CHECKMATE:
-            int mateEval = (col == Piece.WHITE.val())
-            ? -Global.INFINITY + depth * 100
-            : Global.INFINITY - depth * 100;   
-            return mateEval;
-        case DRAW:
-            int drawEval = (col == Piece.WHITE.val())
-            ? contemptFactor
-            : -contemptFactor;
-            return drawEval;
-        default:
-            if (foundMove) {
-                return bestEval;
             }
-            // return evaluate(rec, col);
-            mateEval = (col == Piece.WHITE.val())
-            ? -Global.INFINITY + depth * 100
-            : Global.INFINITY - depth * 100;   
-            return mateEval;
+            int eval = evalSearch(tempRec, -beta, -alpha, Piece.opposite(col).val(), 
+                    0, maxDepth, altMoveOrdering, endTime);
+            if (col == Piece.BLACK.val()) {
+                eval = -eval;
+            }
+            if (eval > bestEval) {
+                bestEval = eval;
+                bestMove = m;
+            }
         }
+        // if the move is invalid, attempts to re-search with a null window, if
+        // the result is still invalid after this, the engine cannot find a move
+        if (bestMove.isInvalid()) {
+            if ((Math.abs(alpha) == Global.INFINITY) || (Math.abs(beta) == Global.INFINITY)) {
+                System.out.println("No move with null window");
+                return new SearchResult(Move.invalid(), -Global.INFINITY, 0);
+
+            }
+            System.out.println("Null window");
+            bestMove = search(rec, -Global.INFINITY, Global.INFINITY, col, maxDepth, 
+                    altMoveOrdering, endTime).move;
+            if (bestMove.isInvalid()) {
+                System.out.println("Engine could not find valid move");
+            }
+        }
+        System.out.println("Search to depth " + maxDepth + ": ");
+        System.out.println("    - Move: " + bestMove.from + " to " + bestMove.to);
+        System.out.println("    - Eval: " + bestEval);
+        return new SearchResult(bestMove, bestEval, maxDepth);
+
     }
 
     /**
-     * Quiescence search ran after main search - attempts to only evaluate positions
-     * where there are no winning moves (quiet / quiescent positions) to minimize
-     * horizon effect (from searching too few nodes).
-     * @param rec BoardRecord representing the position to search from
-     * @param alpha evaluation lower bound
-     * @param beta evaluation upper bound
-     * @param col colour to move in this position
-     * @param depth current quiescence depth
-     * @param pLine principal line that is being explored
-     * @return the evaluation of the position that is considered quiescent
+     * Main search down a path started in search()
+     * @param rec the position to search in
+     * @param alpha the lower bound for evaluation to accept
+     * @param beta the upper bound for evaluation to accept
+     * @param col the colour to search with
+     * @param depth the current depth of the search
+     * @param maxDepth the depth to search to
+     * @param altMoveOrdering use standard or random move ordering
+     * @param endTime the time to end search (System.currentTimeMillis() + searchTime)
+     * @return the evaluation of the position found down this path
      */
-    private int quiesce(BoardRecord rec, int alpha, int beta, int col, int depth, PVLine pLine) {
-        int maxDepth = 5;
-        
-        int standPat = Evaluation.evaluate(rec, col);
-        int bestEval = standPat;
+    private static int evalSearch(BoardRecord rec, int alpha, int beta, int col, 
+            int depth, int maxDepth, boolean altMoveOrdering, long endTime) {
+        if (depth == maxDepth) {
+            return Quiescence.quiesce(rec, alpha, beta, col, maxDepth, 0, endTime);
 
-        if (depth > maxDepth) return standPat;
-
-        if (standPat >= beta) return standPat;
-        
-        if (alpha < standPat) alpha = standPat;
-
-        BoardRecord outerRec = rec;
-        PVLine line = new PVLine();
-    
+        }
+        int bestEval = -Global.INFINITY;
         MoveList moves = Board.allMoves(rec, col);
-        moves = orderMoves(rec, moves, col);
-        
+        if (altMoveOrdering) {
+            moves.randomize();
+        } else {
+            moves = orderMoves(rec, col, moves);
+        }
         for (int i = 0; i < moves.length(); i++) {
-            Move move = moves.at(i);
-            if (move.flag == MoveFlag.ONLY_ATTACK) continue;
-            
-            // heuristic cut-offs
+            if (System.currentTimeMillis() >= endTime) {
+                return -Global.INFINITY;
 
-            if ((standPat + Evaluation.pieceValue(rec, move.to) + 200 < alpha)
-                    && (rec.minorPieceCount > 2) && (move.flag != MoveFlag.PROMOTE)) {
-                continue;
             }
-
-            if ((move.flag != MoveFlag.PROMOTE) 
-                    && (Evaluation.see(rec, move.to, col) != SEEFlag.WINNING)) {
+            Move m = moves.at(i);
+            if (m.flag == MoveFlag.ONLY_ATTACK) {
                 continue;
+
             }
+            BoardRecord tempRec = rec.copy();
+            if (!Board.tryMove(tempRec, m)) {
+                continue;
 
-            if (rec.board[move.to] == Piece.NONE.val()) continue;
-
-            BoardRecord tempRec = rec.copy(); 
-            if (Board.tryMove(tempRec, move)) { 
-                this.positionsSearched++;
-
-                int eval = -quiesce(tempRec, -beta, -alpha, 
-                        Piece.opposite(col).val(), depth + 1, line);
-
-                if (eval > bestEval) {
-                    bestEval = eval;
-                    if (eval > alpha) {
-                        alpha = eval;
-                        // save pv node
-                        pLine.moves[0] = move;
-                        pLine.algebraics[0] = AlgebraicNotator.moveToAlgeb(rec, move);
-                        for (int j = 0; j < line.length; j++) {
-                            pLine.moves[j + 1] = line.moves[j];
-                            pLine.algebraics[j + 1] = line.algebraics[j];
-                        }
-                        pLine.length = line.length + 1;
-                        // save to transposition table
-                        TableEntry te = new TableEntry(TTFlag.PV, move, 
-                                eval, depth, 0);
-                        Global.tTable.saveHash(te, tempRec, col);
-                    } else { // fail low (upper bound)
-                        // save to transposition table
-                        TableEntry te = new TableEntry(TTFlag.ALL, move, 
-                                eval, depth, 0);
-                        Global.tTable.saveHash(te, tempRec, col);
-                    }
+            }
+            int eval = -evalSearch(tempRec, -beta, -alpha, Piece.opposite(col).val(), 
+                    depth + 1, maxDepth, altMoveOrdering, endTime);
+            if (eval > bestEval) {
+                bestEval = eval;
+                if (eval > alpha) {
+                    alpha = eval;
+                    // pv
+                    TableEntry te = new TableEntry(TTFlag.PV, m, eval, depth, 0);
+                    Global.tTable.saveHash(te, rec, col);
+                } else {
+                    // all
+                    TableEntry te = new TableEntry(TTFlag.ALL, m, eval, depth, 0);
+                    Global.tTable.saveHash(te, rec, col);
                 }
-                if (eval >= beta) { // fail high (lower bound)
-                    // save to transposition table
-                    TableEntry te = new TableEntry(TTFlag.CUT, move, 
-                            eval, depth, 0);
-                    Global.tTable.saveHash(te, tempRec, col);
-                    outerRec = tempRec;
-                    return beta;
-                }
-            }   
-        }
+            }
+            if (eval >= beta) {
+                // cut
+                TableEntry te = new TableEntry(TTFlag.CUT, m, eval, depth, 0);
+                Global.tTable.saveHash(te, rec, col);
+                return beta;
 
-        switch (Board.endState(outerRec, col)) {
-        case CHECKMATE:
-            int mateEval = (col == Piece.WHITE.val())
-            ? -Global.INFINITY + depth * 100
-            : Global.INFINITY - depth * 100;
-            return mateEval;
-        case DRAW:
-            return (col == Piece.WHITE.val())
-                ? contemptFactor
-                : -contemptFactor;
-        default:
-            return bestEval;
+            }
         }
+        return bestEval;
+        
     }
 
-    /**
-     * Changes the order in which moves are searched based on the results of 
-     * previous searches that were recorder in the transposition table
-     * @param rec BoardRecord representing the position where a move is being
-     * generated
-     * @param moves the MoveList that should be reordered
-     * @param moveCol the colour who's turn it is to move
-     * @return the new reordered MoveList
-     */
-    private MoveList orderMoves(BoardRecord rec, MoveList moves, int moveCol) {
+    public static MoveList orderMoves(BoardRecord rec, int col, MoveList moves) {
         moves.attacksToFront();
-
-        TableEntry te = Global.tTable.searchTable(
-                Global.tTable.zobristHash(rec, moveCol));
-        if (te != null) { // tt hit
+        TableEntry te = Global.tTable.searchTable(Global.tTable.zobristHash(rec, col));
+        if (te != null) {
             moves.sendToFront(te.bestMove);
         }
         return moves;
+
     }
 }

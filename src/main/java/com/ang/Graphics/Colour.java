@@ -43,6 +43,7 @@ public class Colour {
      */
     public int r() {
         return elements[0];
+
     }
 
     /**
@@ -50,6 +51,7 @@ public class Colour {
      */
     public int g() {
         return elements[1];
+
     }
 
     /**
@@ -57,6 +59,7 @@ public class Colour {
      */
     public int b() {
         return elements[2];
+
     }
 
     /**
@@ -68,7 +71,7 @@ public class Colour {
         int r = (int) Math.round(elements[0] * t);
         int g = (int) Math.round(elements[1] * t);
         int b = (int) Math.round(elements[2] * t);
-
         return new Colour(r, g, b);
+
     }
 }

@@ -10,6 +10,7 @@ public class Move {
     public boolean  attack;
 
     /**
+     * Overload:
      * Constructs a move
      * @param from index into a BoardRecord's board[] that the move is from
      * @param to index into a BoardRecord's board[] that the move is to
@@ -23,8 +24,7 @@ public class Move {
         this.attack = attack;
     }
 
-    // additional constructors without optional parameters
-
+    // additional constructors with fewer parameters
     public Move(int from, int to, boolean attack) {
         this(from, to, MoveFlag.NONE, attack);
     }
@@ -41,6 +41,7 @@ public class Move {
      */
     public boolean equals(Move m) {
         return (m.from == from) && (m.to == to);
+
     }
 
     /**
@@ -48,6 +49,7 @@ public class Move {
      */
     public boolean isInvalid() {
         return ((from == -1) || (to == -1));
+
     }
 
     /**
@@ -55,5 +57,6 @@ public class Move {
      */
     public static Move invalid() {
         return new Move(-1, -1);
+        
     }
 }

@@ -13,7 +13,6 @@ public class Global {
     public static TranspositionTable tTable = new TranspositionTable();
     public static RepetitionTable repTable = new RepetitionTable();
     public static int fiftyMoveCounter = 0;
-
     public static int ttHits = 0;
     public static int ttColisions = 0;
 
@@ -23,7 +22,6 @@ public class Global {
     public static long pseudoRandom() {
         long max = (long) Math.pow(2, 64);
         long min = 0L;
-        // TODO : implement a beter prng
         return (long) (Math.random() * (max - min) + min); 
     }
 }

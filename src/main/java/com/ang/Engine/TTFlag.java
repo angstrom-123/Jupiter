@@ -23,5 +23,6 @@ public enum TTFlag {
      */
     public int precedence() {
         return precedence;
+        
     }
 }

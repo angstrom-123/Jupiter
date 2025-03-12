@@ -42,12 +42,11 @@ public class IntList {
      */
     public IntList copy() {
         IntList tempList = new IntList();
-
         tempList.elements = this.elements.clone();
         tempList.end = this.end;
         tempList.defaultVal = this.defaultVal;
-
         return tempList;
+
     }
 
     /**
@@ -57,6 +56,7 @@ public class IntList {
     public void add(int e) {
         if (end >= elements.length) {
             return;
+
         }
         elements[end++] = e;
     }
@@ -69,6 +69,7 @@ public class IntList {
         if (end == 0) {
             System.err.println("Cannot remove from empty array - IntList.");
             return;
+
         }
         for (int i = 0; i < end; i++) {
             if (elements[i] == e) {
@@ -83,6 +84,7 @@ public class IntList {
      */
     public int length() {
         return end;
+
     }
 
     /**
@@ -91,6 +93,7 @@ public class IntList {
      */
     public int at(int i) {
         return elements[i];
+
     }
 
     /**
@@ -101,11 +104,14 @@ public class IntList {
         for (int e : elements) {
             if (e == defaultVal) {
                 return false;
+
             }
             if (e == target) {
                 return true;
+
             }
         }
         return false;
+        
     }
 }

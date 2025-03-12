@@ -1,8 +1,6 @@
 package com.ang;
 
-import com.ang.Core.BitBoard;
 import com.ang.Core.Piece;
-import com.ang.Engine.Search;
 
 /**
  * Main class
@@ -11,80 +9,37 @@ public class Main {
     private final static int    SQUARE_SIZE     = 45;
     private final static double RENDER_SCALE    = 1.2;
     
+    /**
+     * Initializes a game between a player
+     * @param args the command line arguments
+     */
     public static void main(String[] args) {
-        switch (0) {
-        case 0: // player v engine
-            initGame(false);
-            break;
-        case 1: // testing move gen
-            initGame(true);
-            break;
-        case 2: // engine v engine
-            initEngineGame();        
-            break;
-        case 3:
-            testBitBoard();
-            break;
-        }
+        Piece playerCol = parseArgs(args);
+        Game g = new Game(playerCol);
+        g.init(SQUARE_SIZE, RENDER_SCALE);
     }
 
     /**
-     * Initializes a chess game between a player and the engine
-     * @param test boolean - run move gen test or just regular game
+     * Extracts possible flags from command line arguments specifying the
+     * player's piece colour.
+     * @param args the command line arguments passed in from main
+     * @return black if flags matched black, else white
      */
-    private static void initGame(boolean test) {
-        Search s0 = new Search(2000, Piece.BLACK);
-        Game g = new Game(s0);
-        if (test) {
-            g.test(4000);
-        } else {
-            g.init(SQUARE_SIZE, RENDER_SCALE);
-        }
-    }
+    public static Piece parseArgs(String[] args) {
+        if (args.length == 0) {
+            return Piece.WHITE;
 
-    /**
-     * Initializes a chess game between 2 engines
-     */
-    private static void initEngineGame() {
-        Search s0 = new Search(1000, Piece.BLACK);
-        Search s1 = new Search(1000, Piece.WHITE);
-        EngineGame eg = new EngineGame(s0, s1);
-        eg.init();
-    }
-
-    private static void testBitBoard() {
-        long bb = 0;
-        bb = BitBoard.activateBit(bb, 10);
-        System.out.println(bb);
-        bb = BitBoard.activateBit(bb, 15);
-        System.out.println(bb);
-        bb = BitBoard.activateBit(bb, 24);
-        System.out.println(bb);
-        bb = BitBoard.activateBit(bb, 63);
-        System.out.println(bb);
-        bb = BitBoard.activateBit(bb, 0);
-        System.out.println(bb);
-        BitBoard.displayBB(bb);
-        printBinary(bb);
-        for (int i : BitBoard.setBits(bb)) {
-            if (i == -1) break;
-            System.out.print(i + ", ");
         }
-        System.out.println();
-    }
+        switch (args[0]) {
+        case "-w": case "-W": case "-White": case "-white":
+            return Piece.WHITE;
 
-    private static void printBinary(long num) {
-        for (int i = 63; i > -1; i--) {
-            if ((i + 1) % 8 == 0) {
-                System.out.print("_");
-            }
-            long checkBit = 1L << i;
-            if ((num & checkBit) == checkBit) {
-                System.out.print("1");
-            } else {
-                System.out.print("0");
-            }
+        case "-b": case "-B": case "-Black": case "-black":
+            return Piece.BLACK;
+
+        default:
+            return Piece.WHITE;
+
         }
-        System.out.println();
     }
 }

@@ -32,7 +32,7 @@ public class ZobristTable {
         int pieceIndex = (piece & 0b11000) == Piece.WHITE.val()
         ? (piece & 0b111) - 1
         : (piece & 0b111) + 5;
-
         return (pieceIndex * 64) + pos;
+        
     }
 }

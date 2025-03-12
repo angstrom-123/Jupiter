@@ -33,6 +33,7 @@ public enum Piece {
      */
     public int val() {
         return val;
+
     }
 
     /**
@@ -40,6 +41,7 @@ public enum Piece {
      */
     public int staticEval() {
         return staticEval;
+
     }
 
     /**
@@ -48,10 +50,13 @@ public enum Piece {
     public Piece opposite() {
         if (this == Piece.BLACK) {
             return Piece.WHITE;
+
         } else if (this == Piece.WHITE) {
             return Piece.BLACK;
+
         } else {
             return Piece.NONE;
+
         }
     }
 
@@ -64,18 +69,25 @@ public enum Piece {
         switch (piece) {
         case 1:
             return Piece.PAWN.staticEval();
+
         case 2:
             return Piece.KNIGHT.staticEval();
+
         case 3:
             return Piece.BISHOP.staticEval();
+
         case 4:
             return Piece.ROOK.staticEval();
+
         case 5:
             return Piece.QUEEN.staticEval();
+
         case 6:
             return Piece.KING.staticEval();
+
         default:
             return 0;
+
         }
     }
 
@@ -87,7 +99,9 @@ public enum Piece {
     public static Piece opposite(int col) {
         if (col == Piece.WHITE.val()) {
             return Piece.BLACK;
+
         }
         return Piece.WHITE;
+        
     }
 }

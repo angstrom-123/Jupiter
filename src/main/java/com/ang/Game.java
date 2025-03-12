@@ -12,6 +12,7 @@ import com.ang.Engine.ThreadLauncher;
  */
 public class Game implements GameInterface, ThreadListener {
     private final long      ENGINE_SEARCH_TIME = 5000;
+
     private int             squareSize;
     private double          renderScale;
     private int             selected;
@@ -22,14 +23,10 @@ public class Game implements GameInterface, ThreadListener {
 
     public BoardRecord      gameRec;
     public Renderer         renderer;
-    public Search           engineSearch;
 
-    public Game(Search engineSearch) {
-        this.engineSearch   = engineSearch;
-        this.engineCol      = engineSearch.engineCol;
-        this.playerCol      = (engineCol == Piece.WHITE.val()) 
-        ? Piece.BLACK.val()
-        : Piece.WHITE.val();
+    public Game(Piece playerCol) {
+        this.playerCol = playerCol.val();
+        this.engineCol = Piece.opposite(playerCol.val()).val();
     }
 
     /**
@@ -41,7 +38,6 @@ public class Game implements GameInterface, ThreadListener {
         this.squareSize     = squareSize;
         this.renderScale    = renderScale;
         String startFEN     = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-
         selected            = -1;
         legalMoves          = new MoveList(0);
         gameRec             = new BoardRecord(startFEN);
@@ -51,53 +47,18 @@ public class Game implements GameInterface, ThreadListener {
         renderer.drawAllSprites(gameRec);
         renderer.drawSquareNums();
         renderer.updateGUI();
-
+        playerCanMove = true;
         if (engineCol == Piece.WHITE.val()) {
             playerCanMove = false;
-            Move engineMove = engineSearch.generateMove(gameRec);
-            if (!Board.tryMove(gameRec, engineMove)) {
-                System.err.println("Engine could not make a valid move");
-                return;  
-            }
-            renderer.drawBoard();
-            renderer.drawAllSprites(gameRec);
-            renderer.drawSquareNums();
-            renderer.updateGUI();
+            launchSearch();
         }
-        playerCanMove = true;
     }
 
     /**
-     * tests how deep the engine can search in a given position
-     * @param time time in ms that the engine is allowed to search for
-     */
-    public void test(int time) {
-        String startFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-        BoardRecord testRecord = new BoardRecord(startFEN);
-        Move[] moves = new Move[]{
-            new Move(51,35),
-            new Move(11,27),
-            new Move(50,34),
-            new Move(27,34),
-            new Move(62,45),
-            new Move(6, 21),
-            new Move(54,46),
-            new Move(12,20),
-            new Move(61,54),
-            new Move(1,16),
-            new Move(57,40)};
-        for (Move move : moves) {
-            Board.tryMove(testRecord, move);
-        }
-
-        Search s0  = new Search(time, Piece.BLACK);
-        System.out.println("test: ");
-        s0.generateMove(testRecord);
-        System.out.println();
-    }
-
-    /**
-     * Handles all logic for player interaction with the gui
+     * Handles all logic for player interaction with the gui. 
+     *  - Checks if player clicks are valid
+     *  - Makes player move when appropriate
+     *  - Launches an engine search when appropriate
      * @param x x coordinate of clicked position
      * @param y y coordinate of clicked position
      */
@@ -117,16 +78,19 @@ public class Game implements GameInterface, ThreadListener {
             legalMoves = showMoves(xCoord, yCoord);
         } else if (moveValid(xCoord, yCoord, pressed) && (selected > -1)) {
             makePlayerMove(selected, pressed);
-
             renderer.drawBoard();
             renderer.drawAllSprites(gameRec);
             renderer.drawSquareNums();
             renderer.updateGUI();
-
             launchSearch();
         }
     }
 
+    /**
+     * Applies a player's move to the board
+     * @param selected index of the square containing the piece to move
+     * @param pressed index of the square where the piece should move to
+     */
     private void makePlayerMove(int selected, int pressed) {
         Move playerMove = findMove(new Move(selected, pressed), legalMoves);
         boolean playerTook = (gameRec.board[playerMove.to] != Piece.NONE.val());
@@ -137,9 +101,14 @@ public class Game implements GameInterface, ThreadListener {
         } else {
             System.err.println("Player move invalid");
             return;
+
         }
     }
 
+    /**
+     * Applies the engine's move to the board when the search is complete
+     * @param engineMove the move found by the engine, returned from the search
+     */
     @Override
     public void searchComplete(Move engineMove) {
         if (engineMove.isInvalid()) {
@@ -162,11 +131,17 @@ public class Game implements GameInterface, ThreadListener {
         }
     }
 
+    /**
+     * Override to implement ThreadListener
+     */
     @Override
     public void workerComplete(Worker w) {
         return;
     }
 
+    /**
+     * Initialises an engine search in the current position
+     */
     private void launchSearch() {
         ThreadLauncher th = new ThreadLauncher(this);
         th.setBoardRecord(gameRec);
@@ -176,34 +151,63 @@ public class Game implements GameInterface, ThreadListener {
         playerCanMove = true;
     }
 
+    /**
+     * Checks if a square pressed would be a valid move for the player
+     * @param xCoord the x coordinate of the square pressed
+     * @param yCoord the y coordinate of the square pressed
+     * @param pos the index of the square pressed
+     * @return {@code true} if the click is valid, else {@code false}
+     */
     private boolean moveValid(int xCoord, int yCoord, int pos) {
-        if ((pos > 63) || (pos < 0)) return false;
-
-        if ((gameRec.board[pos] & 0b11000) == playerCol) return false;
-
-        if (!playerCanMove) return false;
-
-        for (int i = 0; i < legalMoves.length(); i++) {
-            Move m = legalMoves.at(i);
-            if (m == null) return false;
-
-            if (m.flag == MoveFlag.ONLY_ATTACK) continue;
-
-            if (pos == m.to) return true;
+        if ((pos > 63) || (pos < 0)) {
+            return false;
 
         }
+        if ((gameRec.board[pos] & 0b11000) == playerCol) {
+            return false;
 
+        }
+        if (!playerCanMove) {
+            return false;
+
+        }
+        for (int i = 0; i < legalMoves.length(); i++) {
+            Move m = legalMoves.at(i);
+            if (m == null) {
+                return false;
+
+            }
+            if (m.flag != MoveFlag.ONLY_ATTACK) {
+                if (pos == m.to) {
+                    return true;
+
+                }
+            }
+        }
         return false;
 
     }
 
+    /**
+     * Checks if a square pressed would be valid to select for the player
+     * @param xCoord the x coordinate of the square pressed
+     * @param yCoord the y coordinate of the square pressed
+     * @param pos the index of the square pressed
+     * @return {@code true} if the select is valud, else {@code false}
+     */
     private boolean selectValid(int xCoord, int yCoord, int pos) {
-        if ((pos > 63) || (pos < 0)) return false;
+        if ((pos > 63) || (pos < 0)) {
+            return false;
 
-        if ((gameRec.board[pos] & 0b11000) != playerCol) return false;
+        }
+        if ((gameRec.board[pos] & 0b11000) != playerCol) {
+            return false;
 
-        if (!playerCanMove) return false;
+        }
+        if (!playerCanMove) {
+            return false;
 
+        }
         return true;
 
     }
@@ -213,16 +217,20 @@ public class Game implements GameInterface, ThreadListener {
      * clicked by the player
      * @param x logical x coordinate of square clicked
      * @param y logical y coordinate of square clicked
-     * @return
+     * @return the possible moves for the selected piece
      */
     private MoveList showMoves(int x, int y) {
         MoveList moves = PieceMover.moves(gameRec, selected);   
         for (int i = 0; i < moves.length(); i++) {
-            if (moves.at(i).flag == MoveFlag.ONLY_ATTACK) continue;
-            
+            if (moves.at(i).flag == MoveFlag.ONLY_ATTACK) {
+                continue;
+
+            }
             BoardRecord tempRec = gameRec.copy();
-            if (!Board.tryMove(tempRec, moves.at(i))) continue;
-            
+            if (!Board.tryMove(tempRec, moves.at(i))) {
+                continue;
+
+            }
             int markX = moves.at(i).to % 8;
             int markY = (int) Math.floor(moves.at(i).to / 8);
             renderer.drawMarker(markX, markY);
@@ -232,8 +240,16 @@ public class Game implements GameInterface, ThreadListener {
 
     }
 
+    /**
+     * Updates the state of the game (50-move counter, repetitions, etc)
+     * @param m the move most recently made
+     * @param col the colour that most recently moved
+     * @param took did the move capture another piece
+     */
     private void updateState(Move m, int col, boolean took) {
-        if (((gameRec.board[m.to] & 0b111) != Piece.PAWN.val()) && !took) Global.fiftyMoveCounter++;
+        if (((gameRec.board[m.to] & 0b111) != Piece.PAWN.val()) && !took) {
+            Global.fiftyMoveCounter++;
+        }
         if (Board.endState(gameRec, col) == GameFlag.DRAW) {
             renderer.drawBoard();
             renderer.drawAllSprites(gameRec);

@@ -7,9 +7,7 @@ import com.ang.Engine.GameFlag;
 /**
  * Class containing functions to do with the virtual board and the pieces on it
  */
-public class Board {
-    // Publics
-    
+public class Board {    
     /**
      * Attempts to make a move on the board
      * @param rec BoardRecord representing the position where the move should be made
@@ -20,29 +18,35 @@ public class Board {
         if (move.isInvalid()) {
             System.err.println("Attempting invalid move");
             return false;
-        }
 
+        }
         MoveList legal = PieceMover.moves(rec, move.from);
         if (!legal.containsMove(move)) {
             return false;
+
         }
-        
         BoardRecord tempRec = rec.copy();
         makeMove(tempRec, move, legal);
-
         int col = rec.board[move.from] & 0b11000;
         int kingPos = findKing(tempRec, col);
         if ((kingPos == -1) || underAttack(tempRec, kingPos, col)) { 
             return false;
-        }
 
+        }
         makeMove(rec, move, legal);
         updateCRights(rec, move, rec.board[move.to]);
         return true;
+
     }
 
+    /**
+     * Returns the evaluation of checkmate for a given col
+     * @param col the colour that would be in checkmate
+     * @return the checkmate evaluation
+     */
     public static int mateEval(int col) {
         return (col == Piece.WHITE.val()) ? -Global.INFINITY : Global.INFINITY;
+
     }
 
     /**
@@ -55,16 +59,20 @@ public class Board {
     public static MoveList allMoves(BoardRecord rec, int col) {
         MoveList out = new MoveList(200);
         for (int i : BitBoard.setBits(rec.allPieces)) {
-            if (i == -1) break;
+            if (i == -1) {
+                break;
+
+            }
             if ((rec.board[i] & 0b11000) == col) {
                 out.add(PieceMover.moves(rec, i));
             }
         }
-
         return out;
+
     }
 
     /**
+     * Overload:
      * Finds the king in the position
      * @param rec BoardRecord representing the position where the king should be found
      * @param col the colour of the king to be found
@@ -73,18 +81,33 @@ public class Board {
      */
     public static int findKing(BoardRecord rec, Piece col) {
         return findKing(rec, col.val());
-    }
-    public static int findKing(BoardRecord rec, int col) {
-        for (int i : BitBoard.setBits(rec.kings)) {
-            if (i == -1) break;
-            if ((rec.board[i] & 0b11000) == col) {
-                return i;
-            }
-        }
-        return -1;
+
     }
 
     /**
+     * Finds the king in the position
+     * @param rec BoardRecord representing the position where the king should be found
+     * @param col integer representation of the colour of the king to be found
+     * @return an index into a BoardRecord's board[] where the given king is, -1
+     * if the king can't be found
+     */
+    public static int findKing(BoardRecord rec, int col) {
+        for (int i : BitBoard.setBits(rec.kings)) {
+            if (i == -1) {
+                break;
+
+            }
+            if ((rec.board[i] & 0b11000) == col) {
+                return i;
+
+            }
+        }
+        return -1;
+
+    }
+
+    /**
+     * Overload:
      * checks if a square is under attack
      * @param rec BoardRecord representing the position where to check if under attack
      * @param pos index into the BoardRecord's board[] of the square to check
@@ -93,14 +116,26 @@ public class Board {
      */
     public static boolean underAttack(BoardRecord rec, int pos, Piece col) {
         return underAttack(rec, pos, col.val());
+
     }
+
+    /**
+    * checks if a square is under attack
+    * @param rec BoardRecord representing the position where to check if under attack
+    * @param pos index into the BoardRecord's board[] of the square to check
+    * @param col integer representation of the colour of the piece in the tested square
+    * @return {@code true} if the square is under attack by the opponent, else {@code false}
+    */
     public static boolean underAttack(BoardRecord rec, int pos, int col) {        
         if (col == Piece.BLACK.val()) {
             return (BitBoard.bitActive(rec.whiteAttacks, pos));
+
         } else if (col == Piece.WHITE.val()) {
             return (BitBoard.bitActive(rec.blackAttacks, pos));
+
         }
         return false;
+
     }
 
     /**
@@ -112,19 +147,17 @@ public class Board {
     public static boolean inBounds(int from, int offset) {
         if ((from + offset > 63) || (from + offset) < 0) {
             return false;
-        }
 
+        }
         int posX = from % 8;
         int posY = (int) Math.floor(from / 8);
-
         int offsetX = (from + offset) % 8;
         int offsetY = (int) Math.floor((from + offset) / 8);
-
         int deltaX = offsetX - posX;
         int deltaY = offsetY - posY;
-
         // if the end coord is outside of a 5x5 grid centred on start, OOB
         return !((Math.abs(deltaX) > 2) || (Math.abs(deltaY) > 2));
+
     }
 
     /**
@@ -137,11 +170,14 @@ public class Board {
         int piece = rec.board[m.from] & 0b111;
         if (piece != Piece.PAWN.val()) {
             return false;
+
         }
         if ((m.to > 55) || (m.to < 8)) {
             return true;
+
         }
         return false;
+
     }
 
     /**
@@ -153,30 +189,32 @@ public class Board {
     public static GameFlag endState(BoardRecord rec, int col) {
         if (isDraw(rec)) {
             return GameFlag.DRAW;
+
         }
-        
         int kingPos = findKing(rec, col);
         if (kingPos == -1) {
             return GameFlag.CHECKMATE;
+
         }
-        
         MoveList moves = allMoves(rec, col);
         for (int i = 0; i < moves.length(); i++) {
             Move m = moves.at(i);
             if (m.flag == MoveFlag.ONLY_ATTACK) {
                 continue;
+
             }
             BoardRecord tempRec = rec.copy();
             if (tryMove(tempRec, m)) {
                 return GameFlag.NONE;
+
             }
         }
-
         if (!underAttack(rec, kingPos, col)) {
             return GameFlag.DRAW;
-        }
 
+        }
         return GameFlag.CHECKMATE;
+
     }
 
     /**
@@ -190,21 +228,34 @@ public class Board {
         int diff = Math.abs(from - to);
         boolean inSameRow = (from % 8) == (to % 8);
         boolean inSameCol = Math.floor(from / 8) == Math.floor(to / 8);
-
         switch (piece) {
         case 1: case 2: case 6: // pawn, knight, king
             return false;
+
         case 3: // bishop
-            if ((diff % 7 == 0) || (diff % 9 == 0)) return true;    
+            if ((diff % 7 == 0) || (diff % 9 == 0)) {
+                return true;    
+
+            }
             return false;
+
         case 4: // rook
-            if (inSameRow || inSameCol) return true;
+            if (inSameRow || inSameCol) {
+                return true;
+
+            }
             return false;
+
         case 5: // queen
-            if (inSameRow || inSameCol || (diff % 7 == 0) || (diff % 9 == 0)) return true;
+            if (inSameRow || inSameCol || (diff % 7 == 0) || (diff % 9 == 0)) {
+                return true;
+
+            }
             return false;
+
         default:
             return false;
+
         }
     }
 
@@ -222,15 +273,18 @@ public class Board {
     public static boolean doesXray(BoardRecord rec, int piece, int from, int to, IntList exclude) {
         int rowDelta = (int) (Math.floor(from / 8) - Math.floor(to / 8));
         int colDelta = (from % 8) - (to % 8);
-        
-        if (!canXray(piece, from, to)) return false;
+        if (!canXray(piece, from, to)) {
+            return false;
 
+        }
         int offset;
         switch (piece) {
         case 1: case 2: case 6: // pawn, knight, king
             return false;
+
         case 3:
             return false;
+
         case 4:
             if (rowDelta == 0) {
                 offset = (colDelta < 0) ? -8 : 8;
@@ -238,24 +292,37 @@ public class Board {
                 offset = (rowDelta < 0) ? -1 : 1;
             } else {
                 return false;
+
             }
-
             for (int i = 0; i < 7; i++) {
-                if (!Board.inBounds(from + (offset * i), offset)) break; 
+                if (!Board.inBounds(from + (offset * i), offset)) {
+                    break; 
 
+                }
                 int targetSquare = from + (offset * (i + 1));
                 int targetCol = rec.board[targetSquare] & 0b11000;
                 int pieceCol = rec.board[from] & 0b11000;
                 if (!exclude.contains(targetSquare)) {
-                    if (targetCol == pieceCol) return false;
-                    if (targetCol == Piece.opposite(pieceCol).val()) {
-                        if (targetSquare == to) return true;
+                    if (targetCol == pieceCol) {
                         return false;
+
+                    }
+                    if (targetCol == Piece.opposite(pieceCol).val()) {
+                        if (targetSquare == to) {
+                            return true;
+
+                        }
+                        return false;
+
                     } 
                 }
-                if (targetSquare == to) return true;
+                if (targetSquare == to) {
+                    return true;
+
+                }
             }
             return false;
+
         case 5: // queen
             int diff = Math.abs(to - from);
             if ((diff % 7 == 0) || (diff % 9 == 0)) { // diagonal
@@ -270,29 +337,41 @@ public class Board {
                 offset = (rowDelta < 0) ? -8 : 8;
             } else {
                 return false;
+
             }
-
             for (int i = 0; i < 7; i++) {
-                if (!Board.inBounds(from + (offset * i), offset)) return false; 
+                if (!Board.inBounds(from + (offset * i), offset)) {
+                    return false; 
 
+                }
                 int targetSquare = from + (offset * (i + 1));
                 int targetCol = rec.board[targetSquare] & 0b11000;
                 int pieceCol = rec.board[from] & 0b11000;
                 if (!exclude.contains(targetSquare)) {
-                    if (targetCol == pieceCol) break;
+                    if (targetCol == pieceCol) {
+                        break;
+
+                    }
                     if (targetCol == Piece.opposite(pieceCol).val()) {
-                        if (targetSquare == to) return true;
+                        if (targetSquare == to) {
+                            return true;
+
+                        }
                         return false;
+
                     } 
                 }
-                if (targetSquare == to) return true;
+                if (targetSquare == to) {
+                    return true;
+
+                }
             }
             return false;
-        default:
-            break;
-        }
 
-        return false;
+        default:
+            return false;
+
+        }
     }
 
     /**
@@ -308,14 +387,17 @@ public class Board {
     public static int getLightestAttacker(BoardRecord rec, int pos, int col, IntList exclude) {
         int minVal = Global.INFINITY;
         int minPos = -1;
-
         MoveList moves = Board.allMoves(rec, col);
         for (int i = 0; i < moves.length(); i++) {
             Move m = moves.at(i);
+            if (!m.attack || (m.flag == MoveFlag.ONLY_ATTACK)) {
+                continue;
 
-            if (!m.attack || (m.flag == MoveFlag.ONLY_ATTACK)) continue;
-            if (exclude.contains(m.from)) continue;
+            }
+            if (exclude.contains(m.from)) {
+                continue;
 
+            }
             int piece = rec.board[m.from] & 0b11000; 
             if ((m.to == pos) || (Board.doesXray(rec, piece, m.from, pos, exclude))) {
                 int se = Piece.staticEval(piece);
@@ -325,11 +407,12 @@ public class Board {
                 }
             }
         }
-
         return minPos;
+
     }
 
     /**
+     * Overload:
      * Checks if a player has insufficient material to force a win
      * @param rec BoardRecord representing the position to check
      * @param col the colour to move in the position
@@ -337,22 +420,44 @@ public class Board {
      * material, else {@code false}
      */
     public static boolean insufficientMaterial(BoardRecord rec, int col) {
-        // check for coloured rooks queens and pawns
-        if (rec.pawnCount + rec.rookCount + rec.queenCount == 0) return true;
+        if (rec.pawnCount + rec.rookCount + rec.queenCount == 0) {
+            return true;
+
+        }
         for (int i : BitBoard.setBits(rec.pawns)) {
-            if (i == -1) break;
-            if ((rec.board[i] & 0b11000) == col) return false;
+            if (i == -1) {
+                break;
+
+            }
+            if ((rec.board[i] & 0b11000) == col) {
+                return false;
+
+            }
         }
         for (int i : BitBoard.setBits(rec.rooks)) {
-            if (i == -1) break;
-            if ((rec.board[i] & 0b11000) == col) return false;
+            if (i == -1) {
+                break;
+
+            }
+            if ((rec.board[i] & 0b11000) == col) {
+                return false;
+
+            }
         }
         for (int i : BitBoard.setBits(rec.queens)) {
-            if (i == -1) break;
-            if ((rec.board[i] & 0b11000) == col) return false;
+            if (i == -1) {
+                break;
+
+            }
+            if ((rec.board[i] & 0b11000) == col) {
+                return false;
+
+            }
         }
         return true;
+
     }
+
     /**
      * Checks if there is insufficient material for either player to force a win
      * @param rec BoardRecord representing the position to check
@@ -360,6 +465,7 @@ public class Board {
      */
     public static boolean insufficientMaterial(BoardRecord rec) {
         return (rec.pawnCount + rec.rookCount + rec.queenCount == 0);
+
     }
 
     /**
@@ -372,22 +478,27 @@ public class Board {
         switch (rec.board[pos] & 0b111) {
         case 1:
             return Piece.PAWN;
+
         case 2:
             return Piece.KNIGHT;
+
         case 3:
             return Piece.BISHOP;
+
         case 4:
             return Piece.ROOK;
+
         case 5:
             return Piece.QUEEN;
+
         case 6:
             return Piece.KING;
+
         default:
             return Piece.NONE;
+
         }
     }
-
-    // private
 
     /**
      * Checks if a piece is a long range sliding piece
@@ -399,8 +510,10 @@ public class Board {
         switch (rec.board[pos] & 0b111) {
             case 3: case 4: case 5: // bishop, rook, queen
                 return true;
+
             default:
                 return false;
+
         }
     }
 
@@ -414,59 +527,61 @@ public class Board {
     private static void resolveFlags(BoardRecord rec, Move move, int piece) {
         int col = piece & 0b11000;
         switch (move.flag) {
-            case MoveFlag.DOUBLE_PUSH:
-                rec.epPawnPos = move.to;
-                break;
-            case MoveFlag.EN_PASSANT:
-                if (rec.epPawnPos == -1) break;
-                MoveList takenMoves = PieceMover.moves(rec, rec.epPawnPos);
-                for (int i = 0; i < takenMoves.length(); i++) {
-                    Move m = takenMoves.at(i);
-                    if (m.attack || (m.flag == MoveFlag.ONLY_ATTACK)) {
-                        rec.removeAttack(rec.board[rec.epPawnPos], m.to);
-                        // rec.removeAttack(Piece.opposite(col), m.to);
-                    }
-                }
-                rec.board[rec.epPawnPos] = Piece.NONE.val();
-                rec.removePosition(Piece.PAWN, rec.epPawnPos);
+        case MoveFlag.DOUBLE_PUSH:
+            rec.epPawnPos = move.to;
+            break;
 
-                rec.epPawnPos = -1; 
+        case MoveFlag.EN_PASSANT:
+            if (rec.epPawnPos == -1) {
                 break;
-            case MoveFlag.CASTLE_SHORT:
-                int shortR = move.from + 3;
-                rec.board[shortR] = Piece.NONE.val();
-                rec.board[shortR - 2] = Piece.ROOK.val() | col;
-                rec.replacePosition(Piece.ROOK, Piece.NONE, shortR, shortR - 2);
 
-                int shortRightsIndex = (col == Piece.WHITE.val()) ? 0 : 2;
-                rec.cRights[shortRightsIndex] = 0;
-                rec.cRightsLocks[shortRightsIndex] = 1;
-
-                rec.epPawnPos = -1;
-                break;
-            case MoveFlag.CASTLE_LONG:
-                int longR = move.from + -4;
-                rec.board[longR] = Piece.NONE.val();
-                rec.board[longR + 3] = Piece.ROOK.val() | col;
-                rec.replacePosition(Piece.ROOK, Piece.NONE, longR, longR + 3);
-
-                int longRightsIndex = (col == Piece.WHITE.val()) ? 1 : 3;
-                rec.cRights[longRightsIndex] = 0;
-                rec.cRightsLocks[longRightsIndex] = 1;
-
-                rec.epPawnPos = -1; 
-                break;
-            case MoveFlag.PROMOTE:
-                rec.board[move.to] = Piece.QUEEN.val() | col;
-                rec.removePosition(piece, move.to);
-                rec.addPosition(Piece.QUEEN, move.to);
-
-                rec.epPawnPos = -1; 
-                break;
-            default:
-                rec.epPawnPos = -1; 
-                break;
             }
+            MoveList takenMoves = PieceMover.moves(rec, rec.epPawnPos);
+            for (int i = 0; i < takenMoves.length(); i++) {
+                Move m = takenMoves.at(i);
+                if (m.attack || (m.flag == MoveFlag.ONLY_ATTACK)) {
+                    rec.removeAttack(rec.board[rec.epPawnPos], m.to);
+                }
+            }
+            rec.board[rec.epPawnPos] = Piece.NONE.val();
+            rec.removePosition(Piece.PAWN, rec.epPawnPos);
+            rec.epPawnPos = -1; 
+            break;
+
+        case MoveFlag.CASTLE_SHORT:
+            int shortR = move.from + 3;
+            rec.board[shortR] = Piece.NONE.val();
+            rec.board[shortR - 2] = Piece.ROOK.val() | col;
+            rec.replacePosition(Piece.ROOK, Piece.NONE, shortR, shortR - 2);
+            int shortRightsIndex = (col == Piece.WHITE.val()) ? 0 : 2;
+            rec.cRights[shortRightsIndex] = 0;
+            rec.cRightsLocks[shortRightsIndex] = 1;
+            rec.epPawnPos = -1;
+            break;
+
+        case MoveFlag.CASTLE_LONG:
+            int longR = move.from + -4;
+            rec.board[longR] = Piece.NONE.val();
+            rec.board[longR + 3] = Piece.ROOK.val() | col;
+            rec.replacePosition(Piece.ROOK, Piece.NONE, longR, longR + 3);
+            int longRightsIndex = (col == Piece.WHITE.val()) ? 1 : 3;
+            rec.cRights[longRightsIndex] = 0;
+            rec.cRightsLocks[longRightsIndex] = 1;
+            rec.epPawnPos = -1; 
+            break;
+
+        case MoveFlag.PROMOTE:
+            rec.board[move.to] = Piece.QUEEN.val() | col;
+            rec.removePosition(piece, move.to);
+            rec.addPosition(Piece.QUEEN, move.to);
+            rec.epPawnPos = -1; 
+            break;
+
+        default:
+            rec.epPawnPos = -1; 
+            break;
+
+        }
     }
 
     /**
@@ -478,14 +593,18 @@ public class Board {
     private static boolean isDraw(BoardRecord rec) {
         if (Global.fiftyMoveCounter >= 75) {
             return true;
+
         }
         if (Global.repTable.checkRepetitions(rec) >= 2) {
             return true;
+
         }
         if (Board.insufficientMaterial(rec)) {
             return true;
+
         }
         return false;
+
     }
 
     /**
@@ -503,16 +622,17 @@ public class Board {
         boolean lockWhiteLong   = false;
         boolean lockBlackShort  = false;
         boolean lockBlackLong   = false;
-
         // kings' castling paths
         int[]   whiteShortRoute = new int[]{61, 62};
         int[]   whiteLongRoute  = new int[]{58, 59};
         int     longEmptyPos    = 57;
         int     blackOffset     = -56;
-
         // king moved or in check
         for (int pos : BitBoard.setBits(rec.kings)) {
-            if (pos == -1) break;
+            if (pos == -1) {
+                break;
+
+            }
             if ((rec.board[pos] & 0b11000) == Piece.WHITE.val()) {
                 if (underAttack(rec, pos, Piece.WHITE.val())) {
                     whiteCanShort   = false;
@@ -537,7 +657,6 @@ public class Board {
                 }
             }
         }
-
         // black king's rook moved
         if ((rec.board[7]) != (Piece.ROOK.val() | Piece.BLACK.val())) {
             blackCanShort   = false;
@@ -558,15 +677,16 @@ public class Board {
             whiteCanLong    = false;
             lockWhiteLong   = true;
         }
-
         // white short path blocked or checked
         for (int pos : whiteShortRoute) {
             if (rec.board[pos] != Piece.NONE.val()) {
                 whiteCanShort = false;
                 break;
+
             } else if (underAttack(rec, pos, Piece.WHITE.val())) {
                 whiteCanShort = false;
                 break;
+
             }
         }
         // white long path blocked or checked
@@ -577,9 +697,11 @@ public class Board {
                 if (rec.board[pos] != Piece.NONE.val()) {
                     whiteCanLong = false;
                     break;
+
                 } else if (underAttack(rec, pos, Piece.WHITE.val())) {
                     whiteCanLong = false;
                     break;
+
                 }
             }
         }
@@ -588,9 +710,11 @@ public class Board {
             if (rec.board[pos + blackOffset] != Piece.NONE.val()) {
                 blackCanShort = false;
                 break;
+
             } else if (underAttack(rec, pos + blackOffset, Piece.BLACK.val())) {
                 blackCanShort = false;
                 break;
+
             }
         }
         // black long path blocked or checked
@@ -601,13 +725,14 @@ public class Board {
                 if (rec.board[pos + blackOffset] != Piece.NONE.val()) {
                     blackCanLong = false;
                     break;
+
                 } else if (underAttack(rec, pos + blackOffset, Piece.BLACK.val())) {
                     blackCanLong = false;
                     break;
+
                 }
             }
         }
-
         // update castling rights locks
         if (lockWhiteShort) {
             rec.cRightsLocks[0] = 1; 
@@ -625,7 +750,6 @@ public class Board {
             rec.cRightsLocks[3] = 1; 
             rec.cRights[3]      = 0;
         }
-
         // update castling rights if unlocked
         if (rec.cRightsLocks[0] == 0) {
             rec.cRights[0] = (whiteCanShort) ? 1 : 0;
@@ -650,10 +774,12 @@ public class Board {
     private static void makeMove(BoardRecord rec, Move move, MoveList legalMoves) {        
         int moving = rec.board[move.from];
         int taken = rec.board[move.to];
-    
         // remove piece attacks prior to move for recalculation
         for (int pos : BitBoard.setBits(rec.allPieces)) {
-            if (pos == -1) break;
+            if (pos == -1) {
+                break;
+
+            }
             if (pos == move.from) { // remove attacks of moving piece
                 for (int i = 0; i < legalMoves.length(); i++) {
                     Move m = legalMoves.at(i);
@@ -678,19 +804,18 @@ public class Board {
                     }
                 }
             }
-        }   
-    
+        }
         rec.board[move.to] = rec.board[move.from];
         rec.board[move.from] = Piece.NONE.val();
         rec.replacePosition(moving, taken, move.from, move.to);
-        
         resolveFlags(rec, move, moving);
-
         // recalculate piece attacks after move
         for (int pos : BitBoard.setBits(rec.allPieces)) {
-            if (pos == -1) break;
+            if (pos == -1) {
+                break;
 
-            // recalc piece attacks
+            }
+            // recalculate piece attacks
             MoveList moves = PieceMover.moves(rec, pos);
             for (int i = 0; i < moves.length(); i++) {
                 Move m = moves.at(i);

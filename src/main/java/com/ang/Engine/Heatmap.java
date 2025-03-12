@@ -1,7 +1,7 @@
 package com.ang.Engine;
 
 /**
- * Class holding lookups for positional bonuses present for each piece
+ * Class holding lookups for positional bonuses for each piece
  */
 public class Heatmap {
     public final static int[] pawnMap = new int[]{

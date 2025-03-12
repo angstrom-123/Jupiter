@@ -6,18 +6,15 @@ import com.ang.Core.Moves.*;
 /**
  * Class for representing the state of a chess position
  */
-public class BoardRecord { // TODO : attacks not updating correctly
+public class BoardRecord {
     public int[]    board;
-
     public int      epPawnPos;
     public int      minorPieceCount;
     public int      pawnCount;
     public int      rookCount;
     public int      queenCount;
-
     public int[]    cRights;
     public int[]    cRightsLocks;
-
     public long     pawns;
     public long     knights;
     public long     bishops;
@@ -55,7 +52,6 @@ public class BoardRecord { // TODO : attacks not updating correctly
         allPieces       = 0;
         whiteAttacks    = 0;
         blackAttacks    = 0;
-
         initLists();
     }
 
@@ -65,8 +61,10 @@ public class BoardRecord { // TODO : attacks not updating correctly
     private void initLists() {
         for (int i = 0; i < board.length; i++) {
             int piece = board[i];
-            if (piece == Piece.NONE.val()) continue;
+            if (piece == Piece.NONE.val()) {
+                continue;
 
+            }
             MoveList moves = PieceMover.moves(this, i);
             for (int j = 0; j < moves.length(); j++) {
                 Move m = moves.at(j);
@@ -74,10 +72,8 @@ public class BoardRecord { // TODO : attacks not updating correctly
                     addAttack(piece, m.to);
                 }
             }
-
             addPosition(piece, i);
         }
-
         BitBoard.displayBB(whiteAttacks);
     }
 
@@ -105,9 +101,11 @@ public class BoardRecord { // TODO : attacks not updating correctly
         tempRec.whiteAttacks    = this.whiteAttacks;
         tempRec.blackAttacks    = this.blackAttacks;
         return tempRec;
+
     }
 
     /**
+     * Overload:
      * Removes an attack from the attacks lists
      * @param piece piece that has the attack to be removed
      * @param pos target square of attack
@@ -115,6 +113,12 @@ public class BoardRecord { // TODO : attacks not updating correctly
     public void removeAttack(Piece piece, int pos) {
         removeAttack(piece.val(), pos);
     }
+
+    /**
+     * Removes an attack from the attacks list
+     * @param piece integer representation of piece that has the attack to be removed
+     * @param pos target square of attack
+     */
     public void removeAttack(int piece, int pos) {
         if ((piece & 0b11000) == Piece.BLACK.val()) {
             blackAttacks = BitBoard.deactivateBit(blackAttacks, pos);
@@ -124,6 +128,7 @@ public class BoardRecord { // TODO : attacks not updating correctly
     }
 
     /**
+     * Overload:
      * Adds an attack to the attacks lists
      * @param piece piece that has the attack to be added
      * @param pos target square of attack
@@ -131,6 +136,12 @@ public class BoardRecord { // TODO : attacks not updating correctly
     public void addAttack(Piece piece, int pos) {
         addAttack(piece.val(), pos);
     }
+
+    /**
+     * Adds an attack to the attacks lists
+     * @param piece integer representation of piece that has the attack to be added
+     * @param pos target square of attack
+     */
     public void addAttack(int piece, int pos) {
         if ((piece & 0b11000) == Piece.BLACK.val()) {
             blackAttacks = BitBoard.activateBit(blackAttacks, pos);
@@ -140,13 +151,20 @@ public class BoardRecord { // TODO : attacks not updating correctly
     }
 
     /**
+     * Overload:
      * Removes a position from the positions lists
-     * @param piece piece who's position will be removed
+     * @param piece piece whose position will be removed
      * @param pos position to be removed
      */
     public void removePosition(Piece piece, int pos) {
         removePosition(piece.val(), pos);
     }
+
+    /**
+     * Removes a position from the positions lists
+     * @param piece integer representation of piece whose position will be removed
+     * @param pos position to be removed
+     */
     public void removePosition(int piece, int pos) {
         if (piece > Piece.WHITE.val()) {
             piece &= 0b111;
@@ -155,44 +173,59 @@ public class BoardRecord { // TODO : attacks not updating correctly
         switch (piece) {
         case 0:
             break;
+
         case 1:
             pawns = BitBoard.deactivateBit(pawns, pos);
             pawnCount--;
             break;
+
         case 2:
             knights = BitBoard.deactivateBit(knights, pos);
             minorPieceCount--;
             break;
+
         case 3:
             bishops = BitBoard.deactivateBit(bishops, pos);
             minorPieceCount--;
             break;
+
         case 4:
             rooks = BitBoard.deactivateBit(rooks, pos);
             rookCount--;
             break;
+
         case 5:
             queens = BitBoard.deactivateBit(queens, pos);
             queenCount--;
             break;
+
         case 6:
             kings = BitBoard.deactivateBit(kings, pos);
             break;
+
         default:
             System.err.println("Attempting to remove piece " + piece);
             System.err.println("Could not remove piece position - piece invalid");
             break;
+
         } 
     }
 
     /**
-     * Adds a position to the position lists
-     * @param piece piece who's position will be added
+     * Overload:
+     * Adds a position to the positions lists
+     * @param piece piece whose position will be added
      * @param pos position to be added
      */
     public void addPosition(Piece piece, int pos) {
         addPosition(piece.val() & 0b111, pos);
     }
+
+    /**
+     * Adds a position to the positions lists
+     * @param piece integer representation of piece whose position will be added
+     * @param pos position to be added
+     */
     public void addPosition(int piece, int pos) {
         if (piece > Piece.WHITE.val()) {
             piece &= 0b111;
@@ -201,46 +234,63 @@ public class BoardRecord { // TODO : attacks not updating correctly
         switch (piece) {
         case 0:
             break;
+
         case 1:
             pawns = BitBoard.activateBit(pawns, pos);
             pawnCount++;
             break;
+
         case 2:
             knights = BitBoard.activateBit(knights, pos);
             minorPieceCount++;
             break;
+
         case 3:
             bishops = BitBoard.activateBit(bishops, pos);
             minorPieceCount++;
             break;
+
         case 4:
             rooks = BitBoard.activateBit(rooks, pos);
             rookCount++;
             break;
+
         case 5:
             queens = BitBoard.activateBit(queens, pos);
             queenCount++;
             break;
+
         case 6:
             kings = BitBoard.activateBit(kings, pos);
             break;
+
         default:
             System.err.println("Attempting to save piece " + piece);
             System.err.println("Could not add piece position - piece invalid");
             break;
+
         }   
     }
 
     /**
-     * Replaces the recorded position of one piece with the position of another piece
+     * Overload:
+     * Replaces the position of one piece with the position of another piece
      * @param moving piece that will replace a position
-     * @param taken piece who's position will be replaced
+     * @param taken piece whose position will be replaced
      * @param from initial position of moving piece
      * @param to initial position of taken piece
      */
     public void replacePosition(Piece moving, Piece taken, int from, int to) {
         replacePosition(moving.val() & 0b111, taken.val() & 0b111, from, to);
     }
+    
+    /**
+     * Replaces the position of one piece with the position of another piece
+     * @param moving integer representation of piece that will replace a position
+     * @param taken integer representation of piece whose position will be replaced
+     * @param from initial position of moving piece
+     * @param to initial position of taken piece
+     */
     public void replacePosition(int moving, int taken, int from, int to) {
         removePosition(moving, from);
         addPosition(moving, to);
@@ -259,29 +309,37 @@ public class BoardRecord { // TODO : attacks not updating correctly
             }
             boolean isBlack = (board[i] & 0b11000) == Piece.BLACK.val();
             switch (board[i] & 0b111) {
-                case 0:
-                    System.out.print(". ");
-                    break;
-                case 1:
-                    System.out.print((isBlack) ? "p " : "P ");
-                    break;
-                case 2:
-                    System.out.print((isBlack) ? "n " : "N ");
-                    break;
-                case 3:
-                    System.out.print((isBlack) ? "b " : "B ");
-                    break;
-                case 4:
-                    System.out.print((isBlack) ? "r " : "R ");
-                    break;
-                case 5:
-                    System.out.print((isBlack) ? "q " : "Q ");
-                    break;
-                case 6:
-                    System.out.print((isBlack) ? "k " : "K ");
-                    break;
-                default:
-                    break;
+            case 0:
+                System.out.print(". ");
+                break;
+
+            case 1:
+                System.out.print((isBlack) ? "p " : "P ");
+                break;
+
+            case 2:
+                System.out.print((isBlack) ? "n " : "N ");
+                break;
+
+            case 3:
+                System.out.print((isBlack) ? "b " : "B ");
+                break;
+
+            case 4:
+                System.out.print((isBlack) ? "r " : "R ");
+                break;
+
+            case 5:
+                System.out.print((isBlack) ? "q " : "Q ");
+                break;
+
+            case 6:
+                System.out.print((isBlack) ? "k " : "K ");
+                break;
+
+            default:
+                break;
+                
             }
         }
         System.out.println();

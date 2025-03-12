@@ -12,8 +12,6 @@ public class TableEntry {
     public int      depth;
     public int      age;
 
-    public TableEntry() {};
-
     /**
      * Creates a new entry to be saved to the transposition table
      * @param nodeType type of node to be saved (PV, ALL, CUT)

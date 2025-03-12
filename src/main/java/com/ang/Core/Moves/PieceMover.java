@@ -15,23 +15,32 @@ public class PieceMover {
      * @return list of possible moves for the piece at @param from
      */
     public static MoveList moves(BoardRecord rec, int from) {    
-        if (from == -1) return new MoveList(0);
+        if (from == -1) {
+            return new MoveList(0);
 
+        }
         switch (rec.board[from] & 0b111) {
         case 1:
             return pawnMoves(rec, from);
+
         case 2:
             return knightMoves(rec, from);
+
         case 3:
             return bishopMoves(rec, from);
+
         case 4:
             return rookMoves(rec, from);
+
         case 5:
             return queenMoves(rec, from);
+
         case 6:
             return kingMoves(rec, from);
+
         default:
             return new MoveList(0);
+
         }
     }
 
@@ -45,18 +54,16 @@ public class PieceMover {
         MoveList moves = new MoveList(6);
         int offset;
         int dir = (rec.board[from] & 0b11000) == Piece.WHITE.val() ? 1 : -1;
-        
         offset = -8 * dir;
         if (Board.inBounds(from, offset)) {
             // single push
             if (rec.board[from + offset] == Piece.NONE.val()) { 
                 if ((from + offset < 8) || (from + offset > 55)) {
                     moves.add(new Move(from, from + offset, 
-                              MoveFlag.PROMOTE, false));
+                            MoveFlag.PROMOTE, false));
                 } else {
                     moves.add(new Move(from, from + offset, false)); 
                 }
-
                 // double push
                 offset = -16 * dir;
                 if (((Math.floor(from / 8) == 1) && (dir == -1)) // black
@@ -67,14 +74,13 @@ public class PieceMover {
                 } 
             }
         }
-        
         int[] offsets = new int[]{(-8 * dir) - 1, (-8 * dir) + 1};
         for (int off : offsets) {
             if (!Board.inBounds(from, off)) {
                 continue;
+
             }
-            if ((rec.board[from + off] & 0b11000) 
-                    == Piece.opposite(rec.board[from] & 0b11000).val()) {
+            if ((rec.board[from + off] & 0b11000) == Piece.opposite(rec.board[from] & 0b11000).val()) {
                 // take
                 if ((from + off < 8) || (from + off > 55)) {
                     moves.add(new Move(from, from + off, MoveFlag.PROMOTE));
@@ -94,6 +100,7 @@ public class PieceMover {
             }
         }
         return moves;
+
     }
 
     /**
@@ -106,7 +113,6 @@ public class PieceMover {
         MoveList moves  = new MoveList(8);
         int col         = rec.board[from] & 0b11000;
         int[] offsets   = new int[]{-17, -15, -10, -6, 6, 10, 15, 17};
-
         for (int move : offsets) {
             if (Board.inBounds(from, move)) {
                 if ((rec.board[from + move] & 0b11000) != col) {
@@ -116,8 +122,8 @@ public class PieceMover {
                 }
             }
         }
-        
         return moves;
+
     }
 
     /**
@@ -128,6 +134,7 @@ public class PieceMover {
      */
     private static MoveList bishopMoves(BoardRecord rec, int from) {
         return slidingPieceMoves(rec, from, false, true);
+
     }
 
     /**
@@ -138,6 +145,7 @@ public class PieceMover {
      */
     private static MoveList rookMoves(BoardRecord rec, int from) {
         return slidingPieceMoves(rec, from, true, false);
+
     }
 
     /**
@@ -148,6 +156,7 @@ public class PieceMover {
      */
     private static MoveList queenMoves(BoardRecord rec, int from) {
         return slidingPieceMoves(rec, from, true, true);
+
     }
 
     /**
@@ -160,7 +169,6 @@ public class PieceMover {
         MoveList moves = new MoveList(10);
         int col = rec.board[from] & 0b11000;
         int[] offsets = new int[]{-9, -8, -7, -1, 1, 7, 8, 9};
-
         for (int move : offsets) {
             if (Board.inBounds(from, move)) {
                 if (!Board.underAttack(rec, from + move, col) 
@@ -171,22 +179,20 @@ public class PieceMover {
                 }
             }
         }
-
         int canShort = (col == Piece.WHITE.val()) 
         ? rec.cRights[0]
         : rec.cRights[2];
         if (canShort == 1) {
             moves.add(new Move(from, from + 2, MoveFlag.CASTLE_SHORT, false));
         }
-
         int canLong = (col == Piece.WHITE.val()) 
         ? rec.cRights[1]
         : rec.cRights[3];
         if (canLong == 1) {
             moves.add(new Move(from, from - 2, MoveFlag.CASTLE_LONG, false));
         }
-
         return moves;
+
     }
 
     /**
@@ -202,36 +208,37 @@ public class PieceMover {
         if (!orthogonal && !diagonal) { 
             System.err.println("Sliding piece must have a direction");
             return new MoveList(0); 
-        }
 
+        }
         MoveList moves  = new MoveList(27);
         int[] offsets   = new int[]{-8, -1, 1, 8, -9, -7, 7, 9};
         int col         = rec.board[from] & 0b11000;
         int start       = (orthogonal) ? 0 : 4;
         int end         = (diagonal) ? 8 : 4;
-
         for (int i = start; i < end; i++) {
             int step = 1;
             int stepPos = from;
             while (step < 8) {
                 if (!Board.inBounds(stepPos, offsets[i])) {
                     break;
+
                 }
                 if ((rec.board[stepPos + offsets[i]] & 0b11000) == col) {
                     moves.add(new Move(from, stepPos + offsets[i], MoveFlag.ONLY_ATTACK));
                     break;
+
                 }
                 if ((rec.board[stepPos + offsets[i]] & 0b11000) == Piece.opposite(col).val()) {
                     moves.add(new Move(from, stepPos + offsets[i]));
                     break;
+
                 }
-                
                 moves.add(new Move(from, stepPos + offsets[i]));
                 stepPos += offsets[i];
                 step++;
             }
         }
-
         return moves;
+        
     }
 }

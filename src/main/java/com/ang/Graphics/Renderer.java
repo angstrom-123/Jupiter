@@ -21,7 +21,6 @@ public class Renderer extends JFrame {
     private final Colour    LIGHT_COL       = new Colour(204, 183, 174);
     private final Colour    HIGHLIGHT_COL   = new Colour(255, 106,  60);
     private final Colour    FONT_COL        = new Colour( 50,  50,  60);
-
     private int             squareSize;
     private double          scale;
     private int             size;
@@ -41,7 +40,6 @@ public class Renderer extends JFrame {
         this.squareSize     = squareSize;
         this.scale          = scale;
         this.gameInterface  = gameInterface;
-
         init();
         loadSprites();
         drawBoard();
@@ -89,7 +87,6 @@ public class Renderer extends JFrame {
         };
         final Colour lightTint = new Colour(255, 255, 255);
         final Colour darkTint = new Colour(0, 0, 0);
-
         for (int i = 0; i < paths.length; i++) {
             BufferedImage s = new BufferedImage(squareSize, squareSize,
                     BufferedImage.TYPE_INT_ARGB);
@@ -111,8 +108,8 @@ public class Renderer extends JFrame {
                 }
                 sprites[end] = s;
                 return;
+                
             }
-
             sprites[end] = tint(s, lightTint);
             sprites[end + 1] = tint(s, darkTint);
             end += 2;
@@ -136,29 +133,27 @@ public class Renderer extends JFrame {
                 int r       = (samp >> 16)  & 0xff;
                 int g       = (samp >>  8)  & 0xff;
                 int b       = (samp >>  0)  & 0xff;
-
                 if ((r == 0) && (g == 0) && (b == 0) && (alpha == 0xff)) {
                     out.setRGB(x, y, samp);
                     continue;
-                }
 
+                }
                 if (alpha == 0) {
                     continue;
-                }
 
+                }
                 int rTinted = (int)Math.round((r + tint.r()) / 2);
                 int gTinted = (int)Math.round((g + tint.g()) / 2);
                 int bTinted = (int)Math.round((b + tint.b()) / 2);
-
                 int pixelTinted = (alpha    << 24) 
                                 | (rTinted  << 16) 
                                 | (gTinted  <<  8) 
                                 | (bTinted);
-
                 out.setRGB(x, y, pixelTinted);
             }
         }
         return out;
+
     }
 
     /**
@@ -167,16 +162,9 @@ public class Renderer extends JFrame {
     public void drawBoard() {
         for (int y = 0; y < 8; y++) {
             for (int x = 0; x < 8; x++) {
-                if ((y + x) % 2 == 0) {
-                    drawSquare(x, y, LIGHT_COL);
-                } else {
-                    drawSquare(x, y, DARK_COL);
-                }
+                drawSquare(x, y, ((x + y) % 2 == 0) ? LIGHT_COL : DARK_COL);
             }
         }  
-
-        // frame.repaint();
-        // imgPanel.paintImmediately(imgPanel.getBounds());
     }
 
     /**
@@ -191,7 +179,6 @@ public class Renderer extends JFrame {
         drawCharInSquare(5, 7, 34, 34, Characters.f);
         drawCharInSquare(6, 7, 34, 34, Characters.g);
         drawCharInSquare(7, 7, 34, 34, Characters.h);
-
         drawCharInSquare(0, 0, 1, 1, Characters.eight);
         drawCharInSquare(0, 1, 1, 1, Characters.seven);
         drawCharInSquare(0, 2, 1, 1, Characters.six);
@@ -200,9 +187,6 @@ public class Renderer extends JFrame {
         drawCharInSquare(0, 5, 1, 1, Characters.three);
         drawCharInSquare(0, 6, 1, 1, Characters.two);
         drawCharInSquare(0, 7, 1, 1, Characters.one);
-
-        // frame.repaint();
-        // imgPanel.paintImmediately(imgPanel.getBounds());
     }
 
     /**
@@ -227,7 +211,6 @@ public class Renderer extends JFrame {
      */
     public void drawMarker(int x, int y) {
         BufferedImage s = sprites[12];
-
         drawSprite(x, y, s);
     }
 
@@ -238,11 +221,11 @@ public class Renderer extends JFrame {
      */
     public void highlightSquare(int x, int y) {
         drawSquare(x, y, HIGHLIGHT_COL);
-
-        // frame.repaint();
-        // imgPanel.paintImmediately(imgPanel.getBounds());
     }
 
+    /**
+     * Immediately updates the GUI
+     */
     public void updateGUI() {
         imgPanel.paintImmediately(imgPanel.getBounds());
     }
@@ -295,29 +278,34 @@ public class Renderer extends JFrame {
         case 1: // pawn
             index = 0;
             break;
+
         case 2: // knight
             index = 2;
             break;
+
         case 3: // bishop
             index = 4;
             break;
+
         case 4: // rook
             index = 6;
             break;
+
         case 5: // queen
             index = 8;
             break;
+
         case 6: // king
             index = 10;
             break;
+
         default:
             break;
-        }
 
+        }
         // if piece is black then index into sprites[] is incremented
         index = (piece & 0b11000) == 8 ? index : index + 1;
         BufferedImage s = sprites[index];
-
         drawSprite(x, y, s);
     }
 
@@ -330,7 +318,6 @@ public class Renderer extends JFrame {
     private void drawSprite(int x, int y, BufferedImage s) {
         int startX = x * squareSize;
         int startY = y * squareSize;
-
         for (int j = 0; j < squareSize; j++) {
             for (int i = 0; i < squareSize; i++) {
                 int samp    = s.getRGB(i, j);
@@ -338,18 +325,14 @@ public class Renderer extends JFrame {
                 int r       = (samp >> 16)  & 0xff;
                 int g       = (samp >>  8)  & 0xff;
                 int b       = (samp)        & 0xff;
-
                 if (alpha == 0) {
                     continue;
-                }
 
+                }
                 Colour pixelCol = new Colour(r, g, b);
                 drawPixel(startX + i, startY + j, pixelCol);
             }
         }
-
-        // frame.repaint();
-        // imgPanel.paintImmediately(imgPanel.getBounds());
     }
 
     /**
@@ -363,7 +346,6 @@ public class Renderer extends JFrame {
         int g = (int) Math.round(col.g());
         int b = (int) Math.round(col.b());
         int pixelCol = (r << 16) | (g << 8) | (b);
-
         img.setRGB(x, y, pixelCol);
     }
 }

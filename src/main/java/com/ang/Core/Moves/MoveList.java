@@ -23,6 +23,7 @@ public class MoveList {
     public void add(Move m) {
         if (end >= elements.length) {
             return;
+
         }
         elements[end++] = m;
     }
@@ -36,6 +37,7 @@ public class MoveList {
             Move m = ml.at(i);
             if (m == null) {
                 return;
+
             }
             add(m);
         }
@@ -50,6 +52,7 @@ public class MoveList {
         for (Move move : elements) {
             if (move == null) {
                 break;
+
             }
             if (move.attack) {
                 newElements[newElementsEnd++] = move;
@@ -58,6 +61,7 @@ public class MoveList {
         for (Move move : elements) {
             if (move == null) {
                 break;
+
             }
             if (!move.attack) {
                 newElements[newElementsEnd++] = move;
@@ -77,6 +81,7 @@ public class MoveList {
         for (Move move : elements) {
             if (move == null) {
                 break;
+
             }
             if (!move.equals(m)) {
                 newElements[newElementsEnd++] = move;
@@ -85,6 +90,9 @@ public class MoveList {
         elements = newElements;
     }
 
+    /**
+     * Randomizes the order of the moves in the movelist
+     */
     public void randomize() {
         for (int i = 0; i < length(); i++) {
             int randomIndex = (int) Math.floor(Math.random() * i);
@@ -99,6 +107,7 @@ public class MoveList {
      */
     public int length() {
         return end;
+
     }
 
     /**
@@ -107,6 +116,7 @@ public class MoveList {
      */
     public Move at(int i) {
         return elements[i];
+
     }
 
     /**
@@ -116,10 +126,17 @@ public class MoveList {
      */
     public boolean contains(int pos) {
         for (Move m : elements) {
-            if (m == null) return false;
-            if (m.to == pos) return true;
+            if (m == null) {
+                return false;
+
+            }
+            if (m.to == pos) {
+                return true;
+
+            }
         }
         return false;
+
     }
 
     /**
@@ -129,10 +146,17 @@ public class MoveList {
      */
     public boolean containsFrom(int pos) {
         for (Move m : elements) {
-            if (m == null) return false;
-            if (m.from == pos) return true;
+            if (m == null) {
+                return false;
+
+            }
+            if (m.from == pos) {
+                return true;
+
+            }
         }
         return false;
+
     }
 
     /**
@@ -144,11 +168,14 @@ public class MoveList {
         for (Move m : elements) {
             if (m == null) {
                 return false;
+
             }
             if ((m.flag != MoveFlag.ONLY_ATTACK) && (m.equals(move))) {
                 return true;
+
             }
         }
         return false;
+
     }
 }
