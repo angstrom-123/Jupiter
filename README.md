@@ -19,6 +19,7 @@ By default, engine thinks for ~5 seconds before making a move.
 - Update screenshots
 - Remove old files (from before multithreading)
 - Organize file structure
+- Display square that engine moved from graphically
 - Finish documenting code
 
 ## Screenshots
