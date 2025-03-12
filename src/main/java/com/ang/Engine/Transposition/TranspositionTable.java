@@ -62,7 +62,7 @@ public class TranspositionTable extends ZobristTable {
      * @param rec BoardRecord to be hashed
      * @param moveCol colour to move in the position to be hashed
      */
-    public void saveHash(TableEntry entry, BoardRecord rec, int moveCol) {
+    public synchronized void saveHash(TableEntry entry, BoardRecord rec, int moveCol) {
         saveHash(entry, zobristHash(rec, moveCol));
     }
 
@@ -71,20 +71,16 @@ public class TranspositionTable extends ZobristTable {
      * @param entry TableEntry corresponding to the hashed position
      * @param hash the position hash to enter into the transposition table
      */
-    public void saveHash(TableEntry entry, int hash) {
-        try {
-            TableEntry oldEntry = searchTable(hash);
-            if (oldEntry == null) {
-                hashes.put(hash, entry);
-                size++;
-            } else if ((entry.nodeType.precedence() > oldEntry.nodeType.precedence())
-                    || (entry.depth > oldEntry.depth)) {
-                Global.ttColisions++;
-                hashes.remove(hash);
-                hashes.put(hash, entry);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+    public synchronized void saveHash(TableEntry entry, int hash) {
+        TableEntry oldEntry = searchTable(hash);
+        if (oldEntry == null) {
+            hashes.put(hash, entry);
+            size++;
+        } else if ((entry.nodeType.precedence() > oldEntry.nodeType.precedence())
+                || (entry.depth > oldEntry.depth)) {
+            Global.ttColisions++;
+            hashes.remove(hash);
+            hashes.put(hash, entry);
         }
     }
 

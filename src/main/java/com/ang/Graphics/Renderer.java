@@ -20,7 +20,9 @@ public class Renderer extends JFrame {
     private final Colour    DARK_COL        = new Colour(112, 102, 119);
     private final Colour    LIGHT_COL       = new Colour(204, 183, 174);
     private final Colour    HIGHLIGHT_COL   = new Colour(255, 106,  60);
+    private final Colour    HALFLIGHT_COL   = new Colour(171,  93,  68);
     private final Colour    FONT_COL        = new Colour( 50,  50,  60);
+    private int             halflightSquare = -1;
     private int             squareSize;
     private double          scale;
     private int             size;
@@ -162,7 +164,11 @@ public class Renderer extends JFrame {
     public void drawBoard() {
         for (int y = 0; y < 8; y++) {
             for (int x = 0; x < 8; x++) {
-                drawSquare(x, y, ((x + y) % 2 == 0) ? LIGHT_COL : DARK_COL);
+                if (y * 8 + x == halflightSquare) {
+                    drawSquare(x, y, HALFLIGHT_COL);
+                } else {
+                    drawSquare(x, y, ((x + y) % 2 == 0) ? LIGHT_COL : DARK_COL);
+                }
             }
         }  
     }
@@ -221,6 +227,15 @@ public class Renderer extends JFrame {
      */
     public void highlightSquare(int x, int y) {
         drawSquare(x, y, HIGHLIGHT_COL);
+    }
+
+    public void halflightSquare(int x, int y) {
+        drawSquare(x, y, HALFLIGHT_COL);
+        halflightSquare = y * 8 + x;
+    }
+
+    public void clearHalflight() {
+        halflightSquare = -1;
     }
 
     /**

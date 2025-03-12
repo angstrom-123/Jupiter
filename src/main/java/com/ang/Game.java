@@ -79,7 +79,9 @@ public class Game implements GameInterface, ThreadListener {
             legalMoves = showMoves(xCoord, yCoord);
         } else if (moveValid(xCoord, yCoord, pressed) && (selected > -1)) {
             makePlayerMove(selected, pressed);
+            renderer.clearHalflight();
             renderer.drawBoard();
+            renderer.halflightSquare(xCoord, yCoord);
             renderer.drawAllSprites(gameRec);
             renderer.drawSquareNums();
             renderer.updateGUI();
@@ -117,11 +119,15 @@ public class Game implements GameInterface, ThreadListener {
             return;
 
         }
+        int moveX = engineMove.to % 8;
+        int moveY = (int) Math.floor(engineMove.to / 8);
         boolean engineTook = (gameRec.board[engineMove.to] != Piece.NONE.val());
         if (Board.tryMove(gameRec, engineMove)) {                
             updateState(engineMove, engineCol, engineTook);
             playerCanMove = true;
+            renderer.clearHalflight();
             renderer.drawBoard();
+            renderer.halflightSquare(moveX, moveY);
             renderer.drawAllSprites(gameRec);
             renderer.drawSquareNums();
             renderer.updateGUI();
