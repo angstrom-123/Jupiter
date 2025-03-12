@@ -1,32 +1,25 @@
 # Jupiter
-Simple chess engine written in Java. (Work in progress)
+Simple chess engine with accompanying GUI written in Java.
 
 ## Features
-- Alpha-Beta pruning optimization
-- Transposition table position saving
+- Alpha-Beta pruning with Quiescence Search
+- Transposition table position lookup
 - Move ordering optimizations
 - Iterative deepening
-- Quiescence search
+- LazySMP multithreading (thread voting)
 
 ## Running
 Requires an installation of JDK-21.
 
-By default, engine thinks for 1 second before attempting to make a move.
-
-## Known Bugs
-This project is a work-in-progress so these bugs may or may not be fixed.
-- Transposition table size is uncapped
-- Engine can sometimes move the player's pieces
-- Player's king can sometimes be moved into illegal squares
+By default, engine thinks for ~5 seconds before making a move.
 
 ## TODO
-- Implement checkmates, draws
-- Display player's moves immediately in GUI
 - Fix windows DPI scaling problems with sprites
-- Improve engine's endgame performance
-- Optimize: history heuristic, killer moves, pawn position evaluation, futility pruning
-- Implement multithreaded move search
-- Ensure that search is stopped after time limit is reached
+- Optimize: killer moves, pawn position evaluation
+- Update screenshots
+- Remove old files (from before multithreading)
+- Organize file structure
+- Finish documenting code
 
 ## Screenshots
 ![Screenshot 2024-12-20 014551](https://github.com/user-attachments/assets/49d0751e-ca2f-4777-a1f0-f6982b322109)
