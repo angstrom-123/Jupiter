@@ -5,14 +5,25 @@ import java.util.HashMap;
 import com.ang.Core.BoardRecord;
 import com.ang.Core.Piece;
 
+/**
+ * Class for the repetition table used to check for three-fold repetition draws
+ */
 public class RepetitionTable extends ZobristTable{
     private HashMap<Integer, Integer> history = new HashMap<Integer, Integer>();
 
+    /**
+     * Constructs a zobrist table with 768 elements
+     */
     public RepetitionTable() {
         // 12 pieces * 64 squares
         super(768);  
     }
 
+    /**
+     * Zobrist Hashes only the positions of pieces in the position
+     * @param rec BoardRecord representing the position to be hashed
+     * @return the hash generated from the position
+     */
     public int zobristHash(BoardRecord rec) {
         int h = 0;
         
@@ -25,6 +36,11 @@ public class RepetitionTable extends ZobristTable{
         return h; 
     }
 
+    /**
+     * Saves a position to the repetition table
+     * @param rec BoardRecord representing the position to be saved
+     * @return the amount of times this position has been reached
+     */
     public int saveRepetition(BoardRecord rec) {
         return saveRepetition(zobristHash(rec));
     }

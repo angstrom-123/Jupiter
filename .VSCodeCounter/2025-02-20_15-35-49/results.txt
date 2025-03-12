@@ -1,0 +1,89 @@
+Date : 2025-02-20 15:35:49
+Directory : c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter
+Total : 44 files,  3240 codes, 865 comments, 548 blanks, all 4653 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| Java     |         42 |      3,122 |        861 |        534 |      4,517 |
+| XML      |          1 |         91 |          4 |          7 |        102 |
+| Markdown |          1 |         27 |          0 |          7 |         34 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++-------------------------------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                                                                  | files      | code       | comment    | blank      | total      |
++-------------------------------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                                                                     |         44 |      3,240 |        865 |        548 |      4,653 |
+| . (Files)                                                                                                                                             |          2 |        118 |          4 |         14 |        136 |
+| src                                                                                                                                                   |         42 |      3,122 |        861 |        534 |      4,517 |
+| src\main                                                                                                                                              |         41 |      3,111 |        855 |        530 |      4,496 |
+| src\main\java                                                                                                                                         |         41 |      3,111 |        855 |        530 |      4,496 |
+| src\main\java\com                                                                                                                                     |         41 |      3,111 |        855 |        530 |      4,496 |
+| src\main\java\com\ang                                                                                                                                 |         41 |      3,111 |        855 |        530 |      4,496 |
+| src\main\java\com\ang (Files)                                                                                                                         |          4 |        310 |         63 |         49 |        422 |
+| src\main\java\com\ang\Core                                                                                                                            |         10 |      1,204 |        396 |        166 |      1,766 |
+| src\main\java\com\ang\Core (Files)                                                                                                                    |          5 |        910 |        267 |        117 |      1,294 |
+| src\main\java\com\ang\Core\Moves                                                                                                                      |          5 |        294 |        129 |         49 |        472 |
+| src\main\java\com\ang\Engine                                                                                                                          |         18 |        981 |        242 |        218 |      1,441 |
+| src\main\java\com\ang\Engine (Files)                                                                                                                  |         15 |        872 |        182 |        187 |      1,241 |
+| src\main\java\com\ang\Engine\Transposition                                                                                                            |          3 |        109 |         60 |         31 |        200 |
+| src\main\java\com\ang\Graphics                                                                                                                        |          6 |        509 |        131 |         80 |        720 |
+| src\main\java\com\ang\Util                                                                                                                            |          3 |        107 |         23 |         17 |        147 |
+| src\test                                                                                                                                              |          1 |         11 |          6 |          4 |         21 |
+| src\test\java                                                                                                                                         |          1 |         11 |          6 |          4 |         21 |
+| src\test\java\com                                                                                                                                     |          1 |         11 |          6 |          4 |         21 |
+| src\test\java\com\ang                                                                                                                                 |          1 |         11 |          6 |          4 |         21 |
++-------------------------------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++-------------------------------------------------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                                                                                                              | language | code       | comment    | blank      | total      |
++-------------------------------------------------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\README.md                                                          | Markdown |         27 |          0 |          7 |         34 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\pom.xml                                                            | XML      |         91 |          4 |          7 |        102 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Core\BitBoard.java                           | Java     |         62 |          3 |          9 |         74 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Core\Board.java                              | Java     |        495 |        145 |         64 |        704 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Core\BoardRecord.java                        | Java     |        235 |         53 |         22 |        310 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Core\IntList.java                            | Java     |         61 |         38 |         13 |        112 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Core\Moves\Move.java                         | Java     |         31 |         21 |          8 |         60 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Core\Moves\MoveFlag.java                     | Java     |         10 |          3 |          2 |         15 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Core\Moves\MoveList.java                     | Java     |         90 |         44 |         12 |        146 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Core\Moves\PVLine.java                       | Java     |          7 |          3 |          3 |         13 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Core\Moves\PieceMover.java                   | Java     |        156 |         58 |         24 |        238 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Core\Piece.java                              | Java     |         57 |         28 |          9 |         94 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\EngineGame.java                              | Java     |         38 |         14 |          8 |         60 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Engine\AlgebraicNotator.java                 | Java     |         50 |         19 |         11 |         80 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Engine\AspirationWindow.java                 | Java     |         10 |          0 |          4 |         14 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Engine\Evaluation.java                       | Java     |        109 |         38 |         25 |        172 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Engine\GameFlag.java                         | Java     |          6 |          3 |          2 |         11 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Engine\Heatmap.java                          | Java     |         73 |          3 |          8 |         84 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Engine\Quiescence.java                       | Java     |         59 |          5 |         12 |         76 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Engine\SEEFlag.java                          | Java     |          6 |          3 |          2 |         11 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Engine\Search.java                           | Java     |        256 |         64 |         50 |        370 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Engine\Search2.java                          | Java     |         83 |         25 |         20 |        128 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Engine\SearchResult.java                     | Java     |         18 |          0 |          6 |         24 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Engine\TTFlag.java                           | Java     |         13 |         10 |          5 |         28 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Engine\TableEntry.java                       | Java     |         17 |         11 |          5 |         33 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Engine\ThreadLauncher.java                   | Java     |        131 |          1 |         23 |        155 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Engine\ThreadListener.java                   | Java     |          6 |          0 |          3 |          9 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Engine\Transposition\RepetitionTable.java    | Java     |         41 |         17 |          9 |         67 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Engine\Transposition\TranspositionTable.java | Java     |         49 |         30 |         15 |         94 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Engine\Transposition\ZobristTable.java       | Java     |         19 |         13 |          7 |         39 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Engine\Worker.java                           | Java     |         35 |          0 |         11 |         46 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Game.java                                    | Java     |        182 |         32 |         27 |        241 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Global.java                                  | Java     |         17 |          7 |          6 |         30 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Graphics\Characters.java                     | Java     |        195 |          3 |         17 |        215 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Graphics\Colour.java                         | Java     |         34 |         31 |         10 |         75 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Graphics\EventParams.java                    | Java     |          9 |          0 |          4 |         13 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Graphics\ImagePanel.java                     | Java     |         17 |         11 |          4 |         32 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Graphics\Renderer.java                       | Java     |        245 |         83 |         42 |        370 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Graphics\UpdateInterface.java                | Java     |          9 |          3 |          3 |         15 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Main.java                                    | Java     |         73 |         10 |          8 |         91 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Util\FENReader.java                          | Java     |         78 |          8 |          5 |         91 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Util\GameInterface.java                      | Java     |          4 |          3 |          2 |          9 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\main\java\com\ang\Util\InputHandler.java                       | Java     |         25 |         12 |         10 |         47 |
+| c:\Users\ignac\Desktop\Main\Comp_Sci\2024-25\COM1003 Java Programming\Java\Jupiter\src\test\java\com\ang\AppTest.java                                 | Java     |         11 |          6 |          4 |         21 |
+| Total                                                                                                                                                 |          |      3,240 |        865 |        548 |      4,653 |
++-------------------------------------------------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+

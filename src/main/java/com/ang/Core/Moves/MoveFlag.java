@@ -1,5 +1,8 @@
 package com.ang.Core.Moves;
 
+/**
+ * Enum containing move flags
+ */
 public enum MoveFlag {
     NONE,
     EN_PASSANT,

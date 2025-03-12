@@ -2,7 +2,15 @@ package com.ang.Util;
 
 import com.ang.Core.Piece;
 
+/**
+ * Class for reading FEN strings
+ */
 public class FENReader {
+    /**
+     * Reads a Forsyth-Edwards Notation (FEN) string into a chess position
+     * @param fen the string of FEN to be read
+     * @return int[64] representing the chess board
+     */
     public static int[] readFEN(String fen) {
         int[] board = new int[64];
         int end = 0;

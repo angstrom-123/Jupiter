@@ -3,225 +3,147 @@ package com.ang.Core;
 import com.ang.Util.FENReader;
 import com.ang.Core.Moves.*;
 
-public class BoardRecord {
+/**
+ * Class for representing the state of a chess position
+ */
+public class BoardRecord { // TODO : attacks not updating correctly
     public int[]    board;
 
     public int      epPawnPos;
+    public int      minorPieceCount;
+    public int      pawnCount;
+    public int      rookCount;
+    public int      queenCount;
 
     public int[]    cRights;
     public int[]    cRightsLocks;
 
-    public IntList  pawns;
-    public IntList  knights;
-    public IntList  bishops;
-    public IntList  rooks;
-    public IntList  queens;
-    public IntList  kings;
-    public IntList  allPieces;
+    public long     pawns;
+    public long     knights;
+    public long     bishops;
+    public long     rooks;
+    public long     queens;
+    public long     kings;
+    public long     allPieces;
+    public long     whiteAttacks;
+    public long     blackAttacks;
 
-    public int[]    whiteAttacksP;
-    public int[]    whiteAttacksN;
-    public int[]    whiteAttacksB;
-    public int[]    whiteAttacksR;
-    public int[]    whiteAttacksQ;
-    public int[]    whiteAttacksK;
-    public int[]    blackAttacksP;
-    public int[]    blackAttacksN;
-    public int[]    blackAttacksB;
-    public int[]    blackAttacksR;
-    public int[]    blackAttacksQ;
-    public int[]    blackAttacksK;
-    public int[]    whiteAttacks;
-    public int[]    blackAttacks;
-
+    /**
+     * Constructs a blank BoardRecord
+     */
     public BoardRecord() {}
 
+    /**
+     * Constructs from a starting FEN position
+     * @param startFEN starting position in FEN
+     */
     public BoardRecord(String startFEN) {
         board           = FENReader.readFEN(startFEN);
-
         epPawnPos       = -1;
-
+        minorPieceCount = 0;
+        pawnCount       = 0;
+        rookCount       = 0;
+        queenCount      = 0;
         cRights         = new int[]{0, 0, 0, 0};
         cRightsLocks    = new int[]{0, 0, 0, 0};
-
-        pawns           = new IntList(16, -1);
-        knights         = new IntList(20, -1);
-        bishops         = new IntList(20, -1);
-        rooks           = new IntList(20, -1);
-        queens          = new IntList(18, -1);
-        kings           = new IntList( 2, -1);
-        allPieces       = new IntList(64, -1);
-
-        whiteAttacksP   = new int[64];
-        whiteAttacksN   = new int[64];
-        whiteAttacksB   = new int[64];
-        whiteAttacksR   = new int[64];
-        whiteAttacksQ   = new int[64];
-        whiteAttacksK   = new int[64];
-        blackAttacksP   = new int[64];
-        blackAttacksN   = new int[64];
-        blackAttacksB   = new int[64];
-        blackAttacksR   = new int[64];
-        blackAttacksQ   = new int[64];
-        blackAttacksK   = new int[64];
-        whiteAttacks    = new int[64];
-        blackAttacks    = new int[64];
+        pawns           = 0;
+        knights         = 0;
+        bishops         = 0;
+        rooks           = 0;
+        queens          = 0;
+        kings           = 0;
+        allPieces       = 0;
+        whiteAttacks    = 0;
+        blackAttacks    = 0;
 
         initLists();
     }
 
+    /**
+     * Initializes all lists of attacks, occupied squares, and piece positions
+     */
     private void initLists() {
         for (int i = 0; i < board.length; i++) {
             int piece = board[i];
-            // boolean isBlack = (piece & 0b11000) == Piece.BLACK.val();
-            if (piece == Piece.NONE.val()) { continue; }
+            if (piece == Piece.NONE.val()) continue;
 
-            allPieces.add(i);
-            MoveList moves;
-            for (int j = 0; j < (moves = PieceMover.moves(this, i)).length(); j++) {
+            MoveList moves = PieceMover.moves(this, i);
+            for (int j = 0; j < moves.length(); j++) {
                 Move m = moves.at(j);
                 if (m.attack) {
                     addAttack(piece, m.to);
                 }
             }
 
-            switch (piece & 0b111) {
-            case 1:
-                pawns.add(i);
-                break;
-            case 2:
-                knights.add(i);
-                break;
-            case 3:
-                bishops.add(i);
-                break;
-            case 4:
-                rooks.add(i);
-                break;
-            case 5:
-                queens.add(i);
-                break;
-            case 6:
-                kings.add(i);
-                break;
-            default:
-                break;
-            }
+            addPosition(piece, i);
         }
 
-        showPositions();
+        BitBoard.displayBB(whiteAttacks);
     }
 
+    /**
+     * Creates an unlinked copy of the BoardRecord
+     * @return a copy of the BoardRecord
+     */
     public BoardRecord copy() {
-        BoardRecord tempRec = new BoardRecord();
-        
+        BoardRecord tempRec     = new BoardRecord();
         tempRec.board           = this.board.clone();
         tempRec.epPawnPos       = this.epPawnPos;
+        tempRec.minorPieceCount = this.minorPieceCount;
+        tempRec.pawnCount       = this.pawnCount;
+        tempRec.rookCount       = this.rookCount;
+        tempRec.queenCount      = this.queenCount;
         tempRec.cRights         = this.cRights.clone();
         tempRec.cRightsLocks    = this.cRightsLocks.clone();
-        tempRec.pawns           = this.pawns.copy();
-        tempRec.knights         = this.knights.copy();
-        tempRec.bishops         = this.bishops.copy();
-        tempRec.rooks           = this.rooks.copy();
-        tempRec.queens          = this.queens.copy();
-        tempRec.kings           = this.kings.copy();
-        tempRec.allPieces       = this.allPieces.copy();
-        tempRec.whiteAttacksP   = this.whiteAttacksP.clone();
-        tempRec.whiteAttacksN   = this.whiteAttacksN.clone();
-        tempRec.whiteAttacksB   = this.whiteAttacksB.clone();
-        tempRec.whiteAttacksR   = this.whiteAttacksR.clone();
-        tempRec.whiteAttacksQ   = this.whiteAttacksQ.clone();
-        tempRec.whiteAttacksK   = this.whiteAttacksK.clone();
-        tempRec.blackAttacksP   = this.blackAttacksP.clone();
-        tempRec.blackAttacksN   = this.blackAttacksN.clone();
-        tempRec.blackAttacksB   = this.blackAttacksB.clone();
-        tempRec.blackAttacksR   = this.blackAttacksR.clone();
-        tempRec.blackAttacksQ   = this.blackAttacksQ.clone();
-        tempRec.blackAttacksK   = this.blackAttacksK.clone();
-
-        tempRec.whiteAttacks    = this.whiteAttacks.clone();
-        tempRec.blackAttacks    = this.blackAttacks.clone();
-
+        tempRec.pawns           = this.pawns;
+        tempRec.knights         = this.knights;
+        tempRec.bishops         = this.bishops;
+        tempRec.rooks           = this.rooks;
+        tempRec.queens          = this.queens;
+        tempRec.kings           = this.kings;
+        tempRec.allPieces       = this.allPieces;
+        tempRec.whiteAttacks    = this.whiteAttacks;
+        tempRec.blackAttacks    = this.blackAttacks;
         return tempRec;
     }
 
-    public int minorPieceCount() {
-        return (knights.length() + bishops.length());
-    }
-
+    /**
+     * Removes an attack from the attacks lists
+     * @param piece piece that has the attack to be removed
+     * @param pos target square of attack
+     */
     public void removeAttack(Piece piece, int pos) {
         removeAttack(piece.val(), pos);
     }
     public void removeAttack(int piece, int pos) {
-        changeAttack(piece, pos, -1);
+        if ((piece & 0b11000) == Piece.BLACK.val()) {
+            blackAttacks = BitBoard.deactivateBit(blackAttacks, pos);
+        } else {
+            whiteAttacks = BitBoard.deactivateBit(whiteAttacks, pos);
+        } 
     }
 
+    /**
+     * Adds an attack to the attacks lists
+     * @param piece piece that has the attack to be added
+     * @param pos target square of attack
+     */
     public void addAttack(Piece piece, int pos) {
         addAttack(piece.val(), pos);
     }
     public void addAttack(int piece, int pos) {
-        changeAttack(piece, pos, 1);
-    }
-
-    // TODO : visualize all attacks for all pieces to test new add / remove funcs
-
-    private void changeAttack(int piece, int pos, int delta) {
-        boolean isBlack = (piece & 0b11000) == Piece.BLACK.val();
-        int type = piece & 0b111;
-        
-        switch (type) {
-        case 1:
-            if (isBlack) {
-                blackAttacksP[pos] += delta;
-            } else {
-                whiteAttacksP[pos] += delta;
-            }
-            break;
-        case 2:
-            if (isBlack) {
-                blackAttacksN[pos] += delta;
-            } else {
-                whiteAttacksN[pos] += delta;
-            }
-            break;
-        case 3:
-            if (isBlack) {
-                blackAttacksB[pos] += delta;
-            } else {
-                whiteAttacksB[pos] += delta;
-            }
-            break;
-        case 4:
-            if (isBlack) {
-                blackAttacksR[pos] += delta;
-            } else {
-                whiteAttacksR[pos] += delta;
-            }
-            break;
-        case 5:
-            if (isBlack) {
-                blackAttacksQ[pos] += delta;
-            } else {
-                whiteAttacksQ[pos] += delta;
-            }
-            break;
-        case 6:
-            if (isBlack) {
-                blackAttacksK[pos] += delta;
-            } else {
-                whiteAttacksK[pos] += delta;
-            }
-            break;
-        default:
-            return;
-        }
-        if (isBlack) {
-            blackAttacks[pos] += delta;
+        if ((piece & 0b11000) == Piece.BLACK.val()) {
+            blackAttacks = BitBoard.activateBit(blackAttacks, pos);
         } else {
-            whiteAttacks[pos] += delta;
-        }
+            whiteAttacks = BitBoard.activateBit(whiteAttacks, pos);
+        } 
     }
 
+    /**
+     * Removes a position from the positions lists
+     * @param piece piece who's position will be removed
+     * @param pos position to be removed
+     */
     public void removePosition(Piece piece, int pos) {
         removePosition(piece.val(), pos);
     }
@@ -229,76 +151,96 @@ public class BoardRecord {
         if (piece > Piece.WHITE.val()) {
             piece &= 0b111;
         }
-        allPieces.rem(pos);
+        BitBoard.deactivateBit(allPieces, pos);
         switch (piece) {
         case 0:
             break;
         case 1:
-            pawns.rem(pos);
+            pawns = BitBoard.deactivateBit(pawns, pos);
+            pawnCount--;
             break;
         case 2:
-            knights.rem(pos);
+            knights = BitBoard.deactivateBit(knights, pos);
+            minorPieceCount--;
             break;
         case 3:
-            bishops.rem(pos);
+            bishops = BitBoard.deactivateBit(bishops, pos);
+            minorPieceCount--;
             break;
         case 4:
-            rooks.rem(pos);
+            rooks = BitBoard.deactivateBit(rooks, pos);
+            rookCount--;
             break;
         case 5:
-            queens.rem(pos);
+            queens = BitBoard.deactivateBit(queens, pos);
+            queenCount--;
             break;
         case 6:
-            kings.rem(pos);
+            kings = BitBoard.deactivateBit(kings, pos);
             break;
         default:
-            System.err.println("Attempting to remove piece "+piece);
+            System.err.println("Attempting to remove piece " + piece);
             System.err.println("Could not remove piece position - piece invalid");
             break;
         } 
     }
 
+    /**
+     * Adds a position to the position lists
+     * @param piece piece who's position will be added
+     * @param pos position to be added
+     */
     public void addPosition(Piece piece, int pos) {
         addPosition(piece.val() & 0b111, pos);
     }
-
     public void addPosition(int piece, int pos) {
         if (piece > Piece.WHITE.val()) {
             piece &= 0b111;
         }
-        allPieces.add(pos);
+        allPieces = BitBoard.activateBit(allPieces, pos);
         switch (piece) {
         case 0:
             break;
         case 1:
-            pawns.add(pos);
+            pawns = BitBoard.activateBit(pawns, pos);
+            pawnCount++;
             break;
         case 2:
-            knights.add(pos);
+            knights = BitBoard.activateBit(knights, pos);
+            minorPieceCount++;
             break;
         case 3:
-            bishops.add(pos);
+            bishops = BitBoard.activateBit(bishops, pos);
+            minorPieceCount++;
             break;
         case 4:
-            rooks.add(pos);
+            rooks = BitBoard.activateBit(rooks, pos);
+            rookCount++;
             break;
         case 5:
-            queens.add(pos);
+            queens = BitBoard.activateBit(queens, pos);
+            queenCount++;
             break;
         case 6:
-            kings.add(pos);
+            kings = BitBoard.activateBit(kings, pos);
             break;
         default:
-            System.err.println("Attempting to save piece "+piece);
+            System.err.println("Attempting to save piece " + piece);
             System.err.println("Could not add piece position - piece invalid");
             break;
         }   
     }
 
+    /**
+     * Replaces the recorded position of one piece with the position of another piece
+     * @param moving piece that will replace a position
+     * @param taken piece who's position will be replaced
+     * @param from initial position of moving piece
+     * @param to initial position of taken piece
+     */
     public void replacePosition(Piece moving, Piece taken, int from, int to) {
         replacePosition(moving.val() & 0b111, taken.val() & 0b111, from, to);
     }
-
     public void replacePosition(int moving, int taken, int from, int to) {
         removePosition(moving, from);
         addPosition(moving, to);
@@ -307,6 +249,9 @@ public class BoardRecord {
         }
     }
 
+    /**
+     * Prints the current board state to the terminal (for debugging)
+     */
     public void printBoard() {
         for (int i = 0; i < board.length; i++) {
             if (i % 8 == 0) {
@@ -342,143 +287,23 @@ public class BoardRecord {
         System.out.println();
     }
 
+    /**
+     * Prints information about the position to the terminal (for debugging)
+     */
     public void showPositions() {
-        for (int i = 0; i < 64; i++) {
-            if (i % 8 == 0) {
-                System.out.println();
-            }
-            System.out.print(whiteAttacks[i]+" ");
-        }
-        System.out.println();
-
-        for (int i = 0; i < 64; i++) {
-            if (i % 8 == 0) {
-                System.out.println();
-            }
-            System.out.print(blackAttacks[i]+" ");
-        }
-        System.out.println();
-
-        printBoard();
-
-        System.out.println();
-        // System.out.println("ep pawn "+epPawnPos);
+        BitBoard.displayBB(allPieces);
     }
 
+    /**
+     * Prints all of the attacks for black and white to the terminal (for debugging)
+     */
     public void showAttacks() {
-        System.out.println();
-        System.out.println();
-        System.out.println("Pawns");
         System.out.println("White");
-        for (int i = 0; i < 64; i++) {
-            if (i % 8 == 0) {
-                System.out.println();
-            }
-            System.out.print(this.whiteAttacksP[i] + " ");
-        }
+        BitBoard.displayBB(whiteAttacks);
+        System.out.println(whiteAttacks);
         System.out.println();
         System.out.println("Black");
-        for (int i = 0; i < 64; i++) {
-            if (i % 8 == 0) {
-                System.out.println();
-            }
-            System.out.print(this.blackAttacksP[i] + " ");
-        }
-
-        System.out.println();
-        System.out.println();
-        System.out.println("Knights");
-        System.out.println("White");
-        for (int i = 0; i < 64; i++) {
-            if (i % 8 == 0) {
-                System.out.println();
-            }
-            System.out.print(this.whiteAttacksN[i] + " ");
-        }
-        System.out.println();
-        System.out.println("Black");
-        for (int i = 0; i < 64; i++) {
-            if (i % 8 == 0) {
-                System.out.println();
-            }
-            System.out.print(this.blackAttacksN[i] + " ");
-        }
-
-        System.out.println();
-        System.out.println();
-        System.out.println("Bishops");
-        System.out.println("White");
-        for (int i = 0; i < 64; i++) {
-            if (i % 8 == 0) {
-                System.out.println();
-            }
-            System.out.print(this.whiteAttacksB[i] + " ");
-        }
-        System.out.println("Black");
-        System.out.println();
-        for (int i = 0; i < 64; i++) {
-            if (i % 8 == 0) {
-                System.out.println();
-            }
-            System.out.print(this.blackAttacksB[i] + " ");
-        }
-
-        System.out.println();
-        System.out.println();
-        System.out.println("Rooks");
-        System.out.println("White");
-        for (int i = 0; i < 64; i++) {
-            if (i % 8 == 0) {
-                System.out.println();
-            }
-            System.out.print(this.whiteAttacksR[i] + " ");
-        }
-        System.out.println("Black");
-        System.out.println();
-        for (int i = 0; i < 64; i++) {
-            if (i % 8 == 0) {
-                System.out.println();
-            }
-            System.out.print(this.blackAttacksR[i] + " ");
-        }
-
-        System.out.println();
-        System.out.println();
-        System.out.println("Queens");
-        System.out.println("White");
-        for (int i = 0; i < 64; i++) {
-            if (i % 8 == 0) {
-                System.out.println();
-            }
-            System.out.print(this.whiteAttacksQ[i] + " ");
-        }
-        System.out.println("Black");
-        System.out.println();
-        for (int i = 0; i < 64; i++) {
-            if (i % 8 == 0) {
-                System.out.println();
-            }
-            System.out.print(this.blackAttacksQ[i] + " ");
-        }
-
-        System.out.println();
-        System.out.println();
-        System.out.println("Kings");
-        System.out.println("White");
-        for (int i = 0; i < 64; i++) {
-            if (i % 8 == 0) {
-                System.out.println();
-            }
-            System.out.print(this.whiteAttacksK[i] + " ");
-        }
-        System.out.println("Black");
-        System.out.println();
-        for (int i = 0; i < 64; i++) {
-            if (i % 8 == 0) {
-                System.out.println();
-            }
-            System.out.print(this.blackAttacksK[i] + " ");
-        }
-        System.out.println();
+        BitBoard.displayBB(blackAttacks);
+        System.out.println(blackAttacks);
     }
 }

@@ -4,8 +4,18 @@ import com.ang.Global;
 import com.ang.Core.Moves.*;
 import com.ang.Engine.GameFlag;
 
+/**
+ * Class containing functions to do with the virtual board and the pieces on it
+ */
 public class Board {
-    // public
+    // Publics
+    
+    /**
+     * Attempts to make a move on the board
+     * @param rec BoardRecord representing the position where the move should be made
+     * @param move the move to be attempted
+     * @return {@code true} if the move is successful, else {@code false}
+     */
     public static boolean tryMove(BoardRecord rec, Move move) {
         if (move.isInvalid()) {
             System.err.println("Attempting invalid move");
@@ -31,57 +41,84 @@ public class Board {
         return true;
     }
 
+    public static int mateEval(int col) {
+        return (col == Piece.WHITE.val()) ? -Global.INFINITY : Global.INFINITY;
+    }
+
+    /**
+     * Finds all moves possible for a given colour in a position. Not all moves
+     * are legal, but they are possible in theory
+     * @param rec the BoardRecord representing the position where to find moves
+     * @param col the colour to move in the position
+     * @return a MoveList of possible moves in the position for the given colour
+     */
     public static MoveList allMoves(BoardRecord rec, int col) {
         MoveList out = new MoveList(200);
-        for (int pos : rec.allPieces.elements) {
-            if (pos == -1) {
-                break;
+        for (int i : BitBoard.setBits(rec.allPieces)) {
+            if (i == -1) break;
+            if ((rec.board[i] & 0b11000) == col) {
+                out.add(PieceMover.moves(rec, i));
             }
-            if ((rec.board[pos] & 0b11000) != col) {
-                continue;
-            }
-            out.add(PieceMover.moves(rec, pos));
         }
+
         return out;
     }
 
+    /**
+     * Finds the king in the position
+     * @param rec BoardRecord representing the position where the king should be found
+     * @param col the colour of the king to be found
+     * @return an index into a BoardRecord's board[] where the given king is, -1
+     * if the king can't be found
+     */
     public static int findKing(BoardRecord rec, Piece col) {
         return findKing(rec, col.val());
     }
     public static int findKing(BoardRecord rec, int col) {
-        for (int pos : rec.kings.elements) {
-            if (pos == -1) {
-                break;
-            }
-            if ((rec.board[pos] & 0b11000) == col) {
-                return pos;
+        for (int i : BitBoard.setBits(rec.kings)) {
+            if (i == -1) break;
+            if ((rec.board[i] & 0b11000) == col) {
+                return i;
             }
         }
         return -1;
     }
 
+    /**
+     * checks if a square is under attack
+     * @param rec BoardRecord representing the position where to check if under attack
+     * @param pos index into the BoardRecord's board[] of the square to check
+     * @param col the colour of the piece in the tested square
+     * @return {@code true} if the square is under attack by the opponent, else {@code false}
+     */
     public static boolean underAttack(BoardRecord rec, int pos, Piece col) {
         return underAttack(rec, pos, col.val());
     }
     public static boolean underAttack(BoardRecord rec, int pos, int col) {        
         if (col == Piece.BLACK.val()) {
-            return (rec.whiteAttacks[pos] > 0);
+            return (BitBoard.bitActive(rec.whiteAttacks, pos));
         } else if (col == Piece.WHITE.val()) {
-            return (rec.blackAttacks[pos] > 0);
+            return (BitBoard.bitActive(rec.blackAttacks, pos));
         }
         return false;
     }
 
+    /**
+     * Checks if a move results in a piece going out of bounds
+     * @param from index into a BoardRecord's board[] that the move is from
+     * @param offset offset into a BoardRecord's board[] representing a move
+     * @return {@code true} if the move goes out of bounds, else {@code false}
+     */
     public static boolean inBounds(int from, int offset) {
         if ((from + offset > 63) || (from + offset) < 0) {
             return false;
         }
 
         int posX = from % 8;
-        int posY = (int)Math.floor(from / 8);
+        int posY = (int) Math.floor(from / 8);
 
         int offsetX = (from + offset) % 8;
-        int offsetY = (int)Math.floor((from + offset) / 8);
+        int offsetY = (int) Math.floor((from + offset) / 8);
 
         int deltaX = offsetX - posX;
         int deltaY = offsetY - posY;
@@ -90,6 +127,12 @@ public class Board {
         return !((Math.abs(deltaX) > 2) || (Math.abs(deltaY) > 2));
     }
 
+    /**
+     * Checks if a move is a promotion of a pawn
+     * @param rec BoardRecord representing the position where to check for promotion
+     * @param m the move to check
+     * @return {@code true} if the move promotes a pawn, else {@code false}
+     */
     public static boolean isPromotion(BoardRecord rec, Move m) {
         int piece = rec.board[m.from] & 0b111;
         if (piece != Piece.PAWN.val()) {
@@ -101,6 +144,12 @@ public class Board {
         return false;
     }
 
+    /**
+     * Checks the current status of the game
+     * @param rec BoardRecord representing the position to check
+     * @param col the colour to move in the position
+     * @return {@code DRAW} if stalemate, {@code CHECKMATE} if checkmate, else {@code NONE}
+     */
     public static GameFlag endState(BoardRecord rec, int col) {
         if (isDraw(rec)) {
             return GameFlag.DRAW;
@@ -130,6 +179,13 @@ public class Board {
         return GameFlag.CHECKMATE;
     }
 
+    /**
+     * Checks if a piece can x-ray a square based on its movement direction
+     * @param piece the piece to check
+     * @param from index into a BoardRecord's board[] that the piece is on
+     * @param to index into a BoardRecord's board[] of the target square
+     * @return {@code true} if it can x-ray, else {@code false}
+     */
     public static boolean canXray(int piece, int from, int to) {
         int diff = Math.abs(from - to);
         boolean inSameRow = (from % 8) == (to % 8);
@@ -152,6 +208,17 @@ public class Board {
         }
     }
 
+    /**
+     * Checks if a piece does hit a square after certain pieces are removed
+     * @param rec BoardRecord representing the position to check
+     * @param piece the piece to check
+     * @param from index into the @param rec board[] that the piece is on
+     * @param to index into the @param rec board[] of the target square
+     * @param exclude list of indices into the @param rec board[] to treat as
+     * if they were taken in the position (to ignore)
+     * @return {@code true} if removing pieces in @param exclude allows @param piece
+     * to attack @param to, else {@code false} 
+     */
     public static boolean doesXray(BoardRecord rec, int piece, int from, int to, IntList exclude) {
         int rowDelta = (int) (Math.floor(from / 8) - Math.floor(to / 8));
         int colDelta = (from % 8) - (to % 8);
@@ -228,6 +295,16 @@ public class Board {
         return false;
     }
 
+    /**
+     * Finds the lowest value (static evaluation) attacker of a square after certain
+     * pieces are removed
+     * @param rec BoardRecord representing the position to find the attacker
+     * @param pos index into @param rec board[] that the resulting attacker should hit
+     * @param col colour to move in the position
+     * @param exclude list of indices into @param rec to treat as if they were
+     * removed (to ignore)
+     * @return index into @param rec board[] of the lightest attacker, -1 if not found
+     */
     public static int getLightestAttacker(BoardRecord rec, int pos, int col, IntList exclude) {
         int minVal = Global.INFINITY;
         int minPos = -1;
@@ -252,42 +329,45 @@ public class Board {
         return minPos;
     }
 
-    public static boolean heavyCanCapture(BoardRecord rec, int col) {
-        for (int i = 0; i < rec.allPieces.length(); i++) {
-            int pos = rec.allPieces.at(i);
-            if ((rec.board[pos] & 0b11000) == col) continue;
-
-            if (col == Piece.WHITE.val()) {
-                if (rec.whiteAttacksR[pos] > 0) return true;
-                if (rec.whiteAttacksQ[pos] > 0) return true;
-            } else {
-                if (rec.blackAttacksR[pos] > 0) return true;
-                if (rec.blackAttacksQ[pos] > 0) return true;
-            }
-        }
-
-        return false;
-    }
-
+    /**
+     * Checks if a player has insufficient material to force a win
+     * @param rec BoardRecord representing the position to check
+     * @param col the colour to move in the position
+     * @return {@code true} if the player playing @param col has insufficient 
+     * material, else {@code false}
+     */
     public static boolean insufficientMaterial(BoardRecord rec, int col) {
-        for (int i = 0; i < rec.rooks.length(); i++) {
-            if ((rec.board[rec.rooks.at(i)] & 0b11000) == col) return false;
+        // check for coloured rooks queens and pawns
+        if (rec.pawnCount + rec.rookCount + rec.queenCount == 0) return true;
+        for (int i : BitBoard.setBits(rec.pawns)) {
+            if (i == -1) break;
+            if ((rec.board[i] & 0b11000) == col) return false;
         }
-        for (int i = 0; i < rec.queens.length(); i++) {
-            if ((rec.board[rec.queens.at(i)] & 0b11000) == col) return false;
+        for (int i : BitBoard.setBits(rec.rooks)) {
+            if (i == -1) break;
+            if ((rec.board[i] & 0b11000) == col) return false;
         }
-        for (int i = 0; i < rec.pawns.length(); i++) {
-            if ((rec.board[rec.pawns.at(i)] & 0b11000) == col) return false;
+        for (int i : BitBoard.setBits(rec.queens)) {
+            if (i == -1) break;
+            if ((rec.board[i] & 0b11000) == col) return false;
         }
-
         return true;
     }
+    /**
+     * Checks if there is insufficient material for either player to force a win
+     * @param rec BoardRecord representing the position to check
+     * @return {@code true} if there is insufficient material. else {@code false}
+     */
     public static boolean insufficientMaterial(BoardRecord rec) {
-        return (rec.rooks.length() == 0) 
-                && (rec.pawns.length() == 0) 
-                && (rec.queens.length() == 0);
+        return (rec.pawnCount + rec.rookCount + rec.queenCount == 0);
     }
 
+    /**
+     * Checks which piece is in a given square
+     * @param rec BoardRecord representing the position to check
+     * @param pos index into @param rec board[] to search
+     * @return the piece in the square
+     */
     public static Piece pieceInSquare(BoardRecord rec, int pos) {
         switch (rec.board[pos] & 0b111) {
         case 1:
@@ -309,6 +389,12 @@ public class Board {
 
     // private
 
+    /**
+     * Checks if a piece is a long range sliding piece
+     * @param rec BoardRecord representing the position to check
+     * @param pos index into @param rec board[] containing the piece to check
+     * @return {@code true} if the piece slides, else {@code false}
+     */
     private static boolean isSlidingPiece(BoardRecord rec, int pos) {
         switch (rec.board[pos] & 0b111) {
             case 3: case 4: case 5: // bishop, rook, queen
@@ -318,6 +404,13 @@ public class Board {
         }
     }
 
+    /**
+     * Updates the information in @param rec to deal with potential flags of a move
+     * that was made
+     * @param rec BoardRecord representing the position where @param move was made
+     * @param move the move that was made
+     * @param piece the piece that moved
+     */
     private static void resolveFlags(BoardRecord rec, Move move, int piece) {
         int col = piece & 0b11000;
         switch (move.flag) {
@@ -325,6 +418,7 @@ public class Board {
                 rec.epPawnPos = move.to;
                 break;
             case MoveFlag.EN_PASSANT:
+                if (rec.epPawnPos == -1) break;
                 MoveList takenMoves = PieceMover.moves(rec, rec.epPawnPos);
                 for (int i = 0; i < takenMoves.length(); i++) {
                     Move m = takenMoves.at(i);
@@ -375,6 +469,12 @@ public class Board {
             }
     }
 
+    /**
+     * Checks if a given position is a draw from 50-move rule, repetition, or 
+     * insufficient material
+     * @param rec BoardRecord representing the position to check
+     * @return {@code true} if it is a draw, else {@code false}
+     */
     private static boolean isDraw(BoardRecord rec) {
         if (Global.fiftyMoveCounter >= 75) {
             return true;
@@ -388,6 +488,12 @@ public class Board {
         return false;
     }
 
+    /**
+     * Updates the information in @param rec to update castling rights
+     * @param rec BoardRecord representing the position where @param move was made
+     * @param move the move that was made
+     * @param piece the piece that moved
+     */
     private static void updateCRights(BoardRecord rec, Move move, int piece) {
         boolean whiteCanShort   = true;
         boolean whiteCanLong    = true;
@@ -405,10 +511,8 @@ public class Board {
         int     blackOffset     = -56;
 
         // king moved or in check
-        for (int pos : rec.kings.elements) {
-            if (pos == -1) {
-                continue;
-            }
+        for (int pos : BitBoard.setBits(rec.kings)) {
+            if (pos == -1) break;
             if ((rec.board[pos] & 0b11000) == Piece.WHITE.val()) {
                 if (underAttack(rec, pos, Piece.WHITE.val())) {
                     whiteCanShort   = false;
@@ -537,14 +641,19 @@ public class Board {
         }
     }
 
+    /**
+     * Updates @param rec to simulate a move being made
+     * @param rec BoardRecord representing the position where @param move was made
+     * @param move the move that was made
+     * @param legalMoves the list of legal moves for the moving piece
+     */
     private static void makeMove(BoardRecord rec, Move move, MoveList legalMoves) {        
         int moving = rec.board[move.from];
         int taken = rec.board[move.to];
     
         // remove piece attacks prior to move for recalculation
-        for (int pos : rec.allPieces.elements) {
+        for (int pos : BitBoard.setBits(rec.allPieces)) {
             if (pos == -1) break;
-
             if (pos == move.from) { // remove attacks of moving piece
                 for (int i = 0; i < legalMoves.length(); i++) {
                     Move m = legalMoves.at(i);
@@ -578,24 +687,15 @@ public class Board {
         resolveFlags(rec, move, moving);
 
         // recalculate piece attacks after move
-        for (int pos : rec.allPieces.elements) {
+        for (int pos : BitBoard.setBits(rec.allPieces)) {
             if (pos == -1) break;
 
-            if (pos == move.to) { // recalc moving piece attacks
-                MoveList newMovingAttacks = PieceMover.moves(rec, pos);
-                for (int i = 0; i < newMovingAttacks.length(); i++) {
-                    Move m = newMovingAttacks.at(i);
-                    if (m.attack || (m.flag == MoveFlag.ONLY_ATTACK)) {
-                        rec.addAttack(moving, m.to);
-                    }
-                }
-            } else if (isSlidingPiece(rec, pos)) { // recalc sliding piece attacks 
-                MoveList newSlidingMoves = PieceMover.moves(rec, pos);
-                for (int i = 0; i < newSlidingMoves.length(); i++) {
-                    Move m = newSlidingMoves.at(i);
-                    if (m.attack || (m.flag == MoveFlag.ONLY_ATTACK)) {
-                        rec.addAttack(rec.board[pos], m.to);
-                    }
+            // recalc piece attacks
+            MoveList moves = PieceMover.moves(rec, pos);
+            for (int i = 0; i < moves.length(); i++) {
+                Move m = moves.at(i);
+                if (m.attack || (m.flag == MoveFlag.ONLY_ATTACK)) {
+                    rec.addAttack(rec.board[pos], m.to);
                 }
             }
         }

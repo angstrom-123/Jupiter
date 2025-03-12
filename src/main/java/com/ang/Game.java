@@ -1,17 +1,17 @@
 package com.ang;
 
-import com.ang.Core.Board;
-import com.ang.Core.BoardRecord;
-import com.ang.Core.Piece;
+import com.ang.Core.*;
 import com.ang.Core.Moves.*;
-import com.ang.Engine.GameFlag;
-import com.ang.Engine.Search;
+import com.ang.Engine.*;
 import com.ang.Graphics.Renderer;
 import com.ang.Util.GameInterface;
+import com.ang.Engine.ThreadLauncher;
 
-// TODO : implement checkmate
-
-public class Game implements GameInterface {
+/**
+ * Class handling the player's interaction with the game and the game loop
+ */
+public class Game implements GameInterface, ThreadListener {
+    private final long      ENGINE_SEARCH_TIME = 5000;
     private int             squareSize;
     private double          renderScale;
     private int             selected;
@@ -20,34 +20,37 @@ public class Game implements GameInterface {
     private int             playerCol;
     private int             engineCol;
 
-    public BoardRecord   gameRec;
+    public BoardRecord      gameRec;
     public Renderer         renderer;
     public Search           engineSearch;
-    
+
     public Game(Search engineSearch) {
-        this.engineSearch = engineSearch;
-        this.engineCol = engineSearch.engineCol;
-        this.playerCol = (engineCol == Piece.WHITE.val()) 
+        this.engineSearch   = engineSearch;
+        this.engineCol      = engineSearch.engineCol;
+        this.playerCol      = (engineCol == Piece.WHITE.val()) 
         ? Piece.BLACK.val()
         : Piece.WHITE.val();
     }
 
+    /**
+     * Initialises the game to be played between an engine and player
+     * @param squareSize defines the pixel size of board squares
+     * @param renderScale scaling factor used when rendering squares
+     */
     public void init(int squareSize, double renderScale) {
-        this.squareSize     = 45;
-        this.renderScale    = 1.2;
+        this.squareSize     = squareSize;
+        this.renderScale    = renderScale;
+        String startFEN     = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
         selected            = -1;
         legalMoves          = new MoveList(0);
-        // String startFEN     = "8/1n1n4/1p6/2P4R/8/8/2Q2B2/8";
-        String startFEN     = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-        // String startFEN     = "3r4/8/3k4/8/8/3K4/8/8";
-        // String startFEN     = "8/8/3k4/8/2KB4/4r3/8/8"; 
         gameRec             = new BoardRecord(startFEN);
         renderer            = new Renderer(squareSize, renderScale, this);
 
         renderer.drawBoard();
         renderer.drawAllSprites(gameRec);
         renderer.drawSquareNums();
+        renderer.updateGUI();
 
         if (engineCol == Piece.WHITE.val()) {
             playerCanMove = false;
@@ -59,14 +62,15 @@ public class Game implements GameInterface {
             renderer.drawBoard();
             renderer.drawAllSprites(gameRec);
             renderer.drawSquareNums();
+            renderer.updateGUI();
         }
         playerCanMove = true;
-
-        // System.out.println("see white 26 " + engineSearch.see(gameRec, 26, Piece.WHITE.val()));
-        // System.out.println("see black 26 " + engineSearch.see(gameRec, 26, Piece.BLACK.val()));
-
     }
 
+    /**
+     * tests how deep the engine can search in a given position
+     * @param time time in ms that the engine is allowed to search for
+     */
     public void test(int time) {
         String startFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
         BoardRecord testRecord = new BoardRecord(startFEN);
@@ -92,109 +96,169 @@ public class Game implements GameInterface {
         System.out.println();
     }
 
+    /**
+     * Handles all logic for player interaction with the gui
+     * @param x x coordinate of clicked position
+     * @param y y coordinate of clicked position
+     */
     @Override
     public void mouseClick(int x, int y) {
         double actualSquareSize = Math.round(squareSize * renderScale);
         int xCoord = (int) Math.floor((double) x / actualSquareSize);
         int yCoord = (int) Math.floor((double) y / actualSquareSize);
         int pressed = yCoord * 8 + xCoord;  
-        if ((pressed > 63) || (pressed < 0)) {
-            System.err.println("OOB click");
-            return;
-        }
-        if (((gameRec.board[pressed] & 0b11000) == playerCol)
-                && playerCanMove) {
+        if (selectValid(xCoord, yCoord, pressed)) {
             selected = pressed;
             renderer.drawBoard();
             renderer.highlightSquare(xCoord, yCoord);
             renderer.drawAllSprites(gameRec);
             renderer.drawSquareNums();
+            renderer.updateGUI();
             legalMoves = showMoves(xCoord, yCoord);
-        } else if (selected > -1) {
-            Move playerMove = findMove(new Move(selected, pressed), legalMoves);
-            boolean playerTook = (gameRec.board[playerMove.to] != Piece.NONE.val());
-            if (Board.tryMove(gameRec, playerMove)) {                
-                if (((gameRec.board[playerMove.to] & 0b111) != Piece.PAWN.val())
-                        && !playerTook) {
-                    Global.fiftyMoveCounter++;
-                }
-                if (Board.endState(gameRec, playerCol) == GameFlag.DRAW) {
-                    System.out.println("draw");
-                    renderer.drawBoard();
-                    renderer.drawAllSprites(gameRec);
-                    renderer.drawSquareNums();
-                    return;
-                }
-                Global.repTable.saveRepetition(gameRec.copy());
-                playerCanMove = false;
-                selected = -1;
+        } else if (moveValid(xCoord, yCoord, pressed) && (selected > -1)) {
+            makePlayerMove(selected, pressed);
 
-                renderer.drawBoard();
-                renderer.drawAllSprites(gameRec);
-                renderer.drawSquareNums();
-                // gameRec.printBoard(); // debug
+            renderer.drawBoard();
+            renderer.drawAllSprites(gameRec);
+            renderer.drawSquareNums();
+            renderer.updateGUI();
 
-            } else {
-                System.err.println("Player move invalid");
-                return;
-            }
-            
-            Move engineMove = engineSearch.generateMove(gameRec);
-            if (engineMove.isInvalid()) {
-                System.err.println("Engine move invalid");
-                return;
-            }
-            boolean engineTook = (gameRec.board[engineMove.to] != Piece.NONE.val());
-            if (Board.tryMove(gameRec, engineMove)) {                
-                if (((gameRec.board[engineMove.to] & 0b111) != Piece.PAWN.val())
-                        && !engineTook) {
-                    Global.fiftyMoveCounter++;
-                }
-                if (Board.endState(gameRec, engineCol) == GameFlag.DRAW) {
-                    renderer.drawBoard();
-                    renderer.drawAllSprites(gameRec);
-                    renderer.drawSquareNums();
-                    System.out.println("draw");
-                    return;
-                }
-                Global.repTable.saveRepetition(gameRec.copy());
-                playerCanMove = true;
-
-                renderer.drawBoard();
-                renderer.drawAllSprites(gameRec);
-                renderer.drawSquareNums();
-                // gameRec.printBoard(); // debug
-            } else {
-                System.err.println("Engine could not make a valid move");
-                return;
-            }
+            launchSearch();
         }
     }
 
+    private void makePlayerMove(int selected, int pressed) {
+        Move playerMove = findMove(new Move(selected, pressed), legalMoves);
+        boolean playerTook = (gameRec.board[playerMove.to] != Piece.NONE.val());
+        if (Board.tryMove(gameRec, playerMove)) {                
+            updateState(playerMove, playerCol, playerTook);
+            playerCanMove = false;
+            selected = -1;
+        } else {
+            System.err.println("Player move invalid");
+            return;
+        }
+    }
+
+    @Override
+    public void searchComplete(Move engineMove) {
+        if (engineMove.isInvalid()) {
+            System.err.println("Engine search returned invalid move");
+            return;
+
+        }
+        boolean engineTook = (gameRec.board[engineMove.to] != Piece.NONE.val());
+        if (Board.tryMove(gameRec, engineMove)) {                
+            updateState(engineMove, engineCol, engineTook);
+            playerCanMove = true;
+            renderer.drawBoard();
+            renderer.drawAllSprites(gameRec);
+            renderer.drawSquareNums();
+            renderer.updateGUI();
+        } else {
+            System.err.println("Engine could not make a valid move");
+            return;
+
+        }
+    }
+
+    @Override
+    public void workerComplete(Worker w) {
+        return;
+    }
+
+    private void launchSearch() {
+        ThreadLauncher th = new ThreadLauncher(this);
+        th.setBoardRecord(gameRec);
+        th.setCol(engineCol);
+        th.setSearchTime(ENGINE_SEARCH_TIME);
+        th.run();
+        playerCanMove = true;
+    }
+
+    private boolean moveValid(int xCoord, int yCoord, int pos) {
+        if ((pos > 63) || (pos < 0)) return false;
+
+        if ((gameRec.board[pos] & 0b11000) == playerCol) return false;
+
+        if (!playerCanMove) return false;
+
+        for (int i = 0; i < legalMoves.length(); i++) {
+            Move m = legalMoves.at(i);
+            if (m == null) return false;
+
+            if (m.flag == MoveFlag.ONLY_ATTACK) continue;
+
+            if (pos == m.to) return true;
+
+        }
+
+        return false;
+
+    }
+
+    private boolean selectValid(int xCoord, int yCoord, int pos) {
+        if ((pos > 63) || (pos < 0)) return false;
+
+        if ((gameRec.board[pos] & 0b11000) != playerCol) return false;
+
+        if (!playerCanMove) return false;
+
+        return true;
+
+    }
+
+    /**
+     * displays graphically all possible moves for a friendly piece that was 
+     * clicked by the player
+     * @param x logical x coordinate of square clicked
+     * @param y logical y coordinate of square clicked
+     * @return
+     */
     private MoveList showMoves(int x, int y) {
         MoveList moves = PieceMover.moves(gameRec, selected);   
         for (int i = 0; i < moves.length(); i++) {
-            if (moves.at(i).flag == MoveFlag.ONLY_ATTACK) {
-                continue;
-            }
+            if (moves.at(i).flag == MoveFlag.ONLY_ATTACK) continue;
+            
             BoardRecord tempRec = gameRec.copy();
-            if (!Board.tryMove(tempRec, moves.at(i))) {
-                continue;
-            }
+            if (!Board.tryMove(tempRec, moves.at(i))) continue;
+            
             int markX = moves.at(i).to % 8;
             int markY = (int) Math.floor(moves.at(i).to / 8);
             renderer.drawMarker(markX, markY);
         }
+        renderer.updateGUI();
         return moves;
+
     }
 
-    // need to convert user move to calculated move to get move flags
+    private void updateState(Move m, int col, boolean took) {
+        if (((gameRec.board[m.to] & 0b111) != Piece.PAWN.val()) && !took) Global.fiftyMoveCounter++;
+        if (Board.endState(gameRec, col) == GameFlag.DRAW) {
+            renderer.drawBoard();
+            renderer.drawAllSprites(gameRec);
+            renderer.drawSquareNums();
+            System.out.println("draw");
+        }
+        Global.repTable.saveRepetition(gameRec.copy());
+    }
+
+    /**
+     * When the player creates a move, they specify the from and to squares.
+     * This must be converted to the corresponding move from the movelist for the 
+     * clicked piece to get any required move flags such as promotion & en passant.
+     * @param move the player's (flagless) move
+     * @param moves the movelist of the clicked piece used to find the player's move
+     * @return the move found in the movelist or invalid move if not found
+     */
     private Move findMove(Move move, MoveList moves) {
         for (int i = 0; i < moves.length(); i++) {
             if (moves.at(i).equals(move)) {
                 return moves.at(i);
+
             }
         }
         return Move.invalid();
+
     }
 }

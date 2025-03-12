@@ -1,5 +1,8 @@
 package com.ang.Graphics;
 
+/**
+ * Class storing 2d arrays representing required characters (a-h and 1-8)
+ */
 public class Characters {
     public static int[][] a = new int[][] {
         {0,0,1,1,1,1,1,1,0,0},

@@ -4,8 +4,19 @@ import com.ang.Core.Board;
 import com.ang.Core.BoardRecord;
 import com.ang.Core.Piece;
 
+/**
+ * Class that handles finding possible moves for pieces
+ */
 public class PieceMover {
-    public static MoveList moves(BoardRecord rec, int from) {        
+    /**
+     * Finds the possible moves for a piece
+     * @param rec BoardRecord representing a position where moves should be found
+     * @param from index into @param rec board[] of the moving piece
+     * @return list of possible moves for the piece at @param from
+     */
+    public static MoveList moves(BoardRecord rec, int from) {    
+        if (from == -1) return new MoveList(0);
+
         switch (rec.board[from] & 0b111) {
         case 1:
             return pawnMoves(rec, from);
@@ -24,6 +35,12 @@ public class PieceMover {
         }
     }
 
+    /**
+     * Calculates possible moves for a pawn
+     * @param rec BoardRecord representing a position where moves should be found
+     * @param from index into @param rec board[] of the pawn
+     * @return list of possible moves for the pawn at @param from
+     */
     private static MoveList pawnMoves(BoardRecord rec, int from) {
         MoveList moves = new MoveList(6);
         int offset;
@@ -79,6 +96,12 @@ public class PieceMover {
         return moves;
     }
 
+    /**
+     * Calculates possible moves for a knight
+     * @param rec BoardRecord representing a position where moves should be found
+     * @param from index into @param rec board[] of the knight
+     * @return list of possible moves for the knight at @param from
+     */
     private static MoveList knightMoves(BoardRecord rec, int from) {
         MoveList moves  = new MoveList(8);
         int col         = rec.board[from] & 0b11000;
@@ -97,18 +120,42 @@ public class PieceMover {
         return moves;
     }
 
+    /**
+     * Calculates possible moves for a bishop
+     * @param rec BoardRecord representing a position where moves should be found
+     * @param from index into @param rec board[] of the bishop
+     * @return list of possible moves for the bishop at @param from
+     */
     private static MoveList bishopMoves(BoardRecord rec, int from) {
         return slidingPieceMoves(rec, from, false, true);
     }
 
+    /**
+     * Calculates possible moves for a rook
+     * @param rec BoardRecord representing a position where moves should be found
+     * @param from index into @param rec board[] of the rook
+     * @return list of possible moves for the rook at @param from
+     */
     private static MoveList rookMoves(BoardRecord rec, int from) {
         return slidingPieceMoves(rec, from, true, false);
     }
 
+    /**
+     * Calculates possible moves for a queen
+     * @param rec BoardRecord representing a position where moves should be found
+     * @param from index into @param rec board[] of the queen
+     * @return list of possible moves for the queen at @param from
+     */
     private static MoveList queenMoves(BoardRecord rec, int from) {
         return slidingPieceMoves(rec, from, true, true);
     }
 
+    /**
+     * Calculates possible moves for a king
+     * @param rec BoardRecord representing a position where moves should be found
+     * @param from index into @param rec board[] of the king
+     * @return list of possible moves for the king at @param from
+     */
     private static MoveList kingMoves(BoardRecord rec, int from) {
         MoveList moves = new MoveList(10);
         int col = rec.board[from] & 0b11000;
@@ -142,6 +189,14 @@ public class PieceMover {
         return moves;
     }
 
+    /**
+     * Calculates moves for different sliding pieces
+     * @param rec BoardRecord representing the position where moves should be found
+     * @param from index into @param rec board[] of the sliding piece
+     * @param orthogonal {@code true} if moves orthogonally, else {@code false}
+     * @param diagonal {@code true} if moves diagonally, else {@code false}
+     * @return list of possible moves for the sliding piece at @param from
+     */
     private static MoveList slidingPieceMoves(BoardRecord rec, int from, 
             boolean orthogonal, boolean diagonal) {
         if (!orthogonal && !diagonal) { 
@@ -152,8 +207,8 @@ public class PieceMover {
         MoveList moves  = new MoveList(27);
         int[] offsets   = new int[]{-8, -1, 1, 8, -9, -7, 7, 9};
         int col         = rec.board[from] & 0b11000;
-        int start       = (orthogonal)  ?  0 : 4;
-        int end         = (diagonal)    ?  8 : 4;
+        int start       = (orthogonal) ? 0 : 4;
+        int end         = (diagonal) ? 8 : 4;
 
         for (int i = start; i < end; i++) {
             int step = 1;
@@ -163,8 +218,7 @@ public class PieceMover {
                     break;
                 }
                 if ((rec.board[stepPos + offsets[i]] & 0b11000) == col) {
-                    moves.add(new Move(from, stepPos + offsets[i], 
-                              MoveFlag.ONLY_ATTACK));
+                    moves.add(new Move(from, stepPos + offsets[i], MoveFlag.ONLY_ATTACK));
                     break;
                 }
                 if ((rec.board[stepPos + offsets[i]] & 0b11000) == Piece.opposite(col).val()) {

@@ -3,7 +3,16 @@ package com.ang.Engine;
 import com.ang.Core.*;
 import com.ang.Core.Moves.*;
 
+/**
+ * Class for converting a move from internal representation to algebraic notation
+ */
 public class AlgebraicNotator {
+    /**
+     * Converts a move to algebraic notation
+     * @param rec BoardRecord representing the position where the move was made
+     * @param move the move to convert
+     * @return algebraic notation for the specified move
+     */
     public static String moveToAlgeb(BoardRecord rec, Move move) {
         String out = "";
         
@@ -26,6 +35,11 @@ public class AlgebraicNotator {
         return out;
     }
 
+    /**
+     * Converts an index into algebraic notation coordinates
+     * @param index the index into a boardRecord's board[] to convert
+     * @return the algebraic notation coordinates of the index
+     */
     private static String indexToCoords(int index) {
         String out = "";
         
@@ -38,6 +52,11 @@ public class AlgebraicNotator {
         return out + files[x] + ranks[7 - y];
     }
 
+    /**
+     * Converts integer representation of a piece into algebraic notation
+     * @param piece int value of piece to convert
+     * @return alebraic notation symbol for the piece or '.' if not found
+     */
     private static char intToPiece(int piece) {
         boolean isBlack = (piece & 0b11000) == Piece.BLACK.val();
         switch (piece & 0b111) {

@@ -1,5 +1,8 @@
 package com.ang.Core;
 
+/**
+ * Enum for the different pieces and colours in chess
+ */
 public enum Piece {
     NONE    ( 0, 0),
     PAWN    ( 1, 100),
@@ -14,19 +17,34 @@ public enum Piece {
     private int val;
     private int staticEval;
 
+    /**
+     * Constructs a piece with an integer representation (used in BoardRecord) and
+     * a static evaluation (used in evaluation functions in Search)
+     * @param val integer representation of piece
+     * @param staticEval base (static) evaluation for the piece
+     */
     private Piece (int val, int staticEval) {
         this.val = val;
         this.staticEval = staticEval;
     }
 
+    /**
+     * @return the integer representation of the piece
+     */
     public int val() {
         return val;
     }
 
+    /**
+     * @return the static evaluation of the piece
+     */
     public int staticEval() {
         return staticEval;
     }
 
+    /**
+     * @return opposite colour of instance (none if not BLACK, or WHITE)
+     */
     public Piece opposite() {
         if (this == Piece.BLACK) {
             return Piece.WHITE;
@@ -37,6 +55,11 @@ public enum Piece {
         }
     }
 
+    /**
+     * Finds the static evaluation of an integer representation of a piece
+     * @param piece integer representation of piece
+     * @return its static evaluation
+     */
     public static int staticEval(int piece) {
         switch (piece) {
         case 1:
@@ -56,6 +79,11 @@ public enum Piece {
         }
     }
 
+    /**
+     * Finds the opposite colour of an integer representation of a colour
+     * @param col integer representation of a colour to find opposite of
+     * @return opposite colour
+     */
     public static Piece opposite(int col) {
         if (col == Piece.WHITE.val()) {
             return Piece.BLACK;
