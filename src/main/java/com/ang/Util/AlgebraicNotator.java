@@ -8,12 +8,16 @@ import com.ang.Core.Moves.*;
  */
 public class AlgebraicNotator {
     /**
-     * Converts a move to algebraic notation
+     * Converts a move to algebraic notation. Currently no support for castling 
+     * or en passant. These are treated as standard moves.
      * @param rec BoardRecord representing the position where the move was made
      * @param move the move to convert
      * @return algebraic notation for the specified move
      */
     public static String moveToAlgeb(BoardRecord rec, Move move) {
+        if (move.isInvalid()) {
+            return "-Invalid-";
+        }
         String out = "";
         int moving = rec.board[move.from];
         int taken = rec.board[move.to];
@@ -21,8 +25,10 @@ public class AlgebraicNotator {
             if (taken == Piece.NONE.val()) {
                 out += indexToCoords(move.to);
             } else {
-                char movingFile = indexToCoords(move.from).toCharArray()[0];
-                out += (char) movingFile + 'x' + indexToCoords(move.to);
+                char movingFile = indexToCoords(move.from).charAt(0);
+                out += movingFile; 
+                out += 'x'; 
+                out += indexToCoords(move.to);
             }
         } else {
             out += intToPiece(moving);

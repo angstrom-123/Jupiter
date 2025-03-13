@@ -221,7 +221,7 @@ public class Renderer extends JFrame {
     }
 
     /**
-     * Draws a coloured background for the square at given coordinates
+     * Draws a bright coloured background for the square at given coordinates
      * @param x logical x coordinate of square to be highlighted
      * @param y logical y coordinate of square to be highlighted
      */
@@ -229,11 +229,19 @@ public class Renderer extends JFrame {
         drawSquare(x, y, HIGHLIGHT_COL);
     }
 
+    /**
+    * Draws a dim coloured background for the square at given coordinates
+    * @param x logical x coordinate of square to be highlighted
+    * @param y logical y coordinate of square to be highlighted
+    */
     public void halflightSquare(int x, int y) {
         drawSquare(x, y, HALFLIGHT_COL);
         halflightSquare = y * 8 + x;
     }
 
+    /**
+     * Resets the halflighted square so it is no longer drawn in drawBoard()
+     */
     public void clearHalflight() {
         halflightSquare = -1;
     }

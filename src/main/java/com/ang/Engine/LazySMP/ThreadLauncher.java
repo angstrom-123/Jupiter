@@ -5,7 +5,6 @@ import com.ang.Core.*;
 import com.ang.Core.Moves.*;
 import com.ang.Engine.*;
 import com.ang.Engine.Eval.*;
-import com.ang.Engine.Transposition.*;
 import com.ang.Util.StringManip;
 import com.ang.Util.AlgebraicNotator;
 
@@ -18,13 +17,13 @@ import java.util.concurrent.ExecutorService;
  * Class for launching a search in a position
  */
 public class ThreadLauncher implements Runnable, ThreadListener {
-    private final int               MAX_DEPTH       = 8;
     private final int               PERM_COUNT      = 2; // amount of repeat workers at same depth
-    private SearchResult[]          searchResults   = new SearchResult[(MAX_DEPTH - 1) * PERM_COUNT];
-    private ExecutorService         execService     = Executors.newFixedThreadPool((MAX_DEPTH - 1) * PERM_COUNT);
+    private int                     maxDepth        = 8;
+    private SearchResult[]          searchResults   = new SearchResult[(maxDepth - 1) * PERM_COUNT];
+    private ExecutorService         execService     = Executors.newFixedThreadPool((maxDepth - 1) * PERM_COUNT);
     private BlockingQueue<Runnable> taskQueue       = new LinkedBlockingQueue<>();
     private boolean                 searchDone      = false;
-    private Worker[]                workers         = new Worker[(MAX_DEPTH - 1) * PERM_COUNT];
+    private Worker[]                workers         = new Worker[(maxDepth - 1) * PERM_COUNT];
     private int                     workersFinished = 0;
     private int                     workersLaunched = 0;
     private ThreadListener          listener;
@@ -70,34 +69,21 @@ public class ThreadLauncher implements Runnable, ThreadListener {
      */
     @Override
     public void run() {
-        System.out.println("Launching workers:");
+        maxDepth = calculateMaxDepth();
+        System.out.println("\nLaunching workers\n");
         endTime = System.currentTimeMillis() + searchTime;
         AspirationWindow aspWin = searchRoot(rec, col);
         reSearch(rec, col, aspWin.alpha, aspWin.beta);
         while (!searchDone) {
             try {
-                Thread.sleep(50);
-                // forcibly shuts down search if time runs out before it finishes
-                if ((System.currentTimeMillis() >= endTime)
-                        && (workersFinished != workersLaunched)) {
-                    for (int i = 0; i < workers.length; i++) {
-                        Worker w = workers[i];
-                        if (w == null) {
-                            continue;
-
-                        }
-                        w.doFinish();
-                        workers[i] = null;
-                    }
-                    searchDone = true;
-                    execService.shutdownNow();
+                if (System.currentTimeMillis() < endTime) {
+                    Thread.sleep(50);
+                } else if (workersFinished != workersLaunched) {
+                    killAllWorkers();
                 }
             } catch (InterruptedException e) {
                 System.err.println("Thread await interrupted");
             }
-        }
-        if (Global.tTable.size > 500000) {
-            Global.tTable = new TranspositionTable();
         }
         System.out.println("==============================\n");
         Move bestMove = analyseSearchResults();
@@ -149,7 +135,7 @@ public class ThreadLauncher implements Runnable, ThreadListener {
      * @param beta the upper bound for evaluation to accept
      */
     private void reSearch(BoardRecord rec, int col, int alpha, int beta) {
-        for (int i = 0; i < (MAX_DEPTH - 1) * PERM_COUNT; i++) {
+        for (int i = 0; i < (maxDepth - 1) * PERM_COUNT; i++) {
             int index = getFreeIndex();
             if (index == -1) {
                 System.err.println("Thread cap reached");
@@ -161,8 +147,8 @@ public class ThreadLauncher implements Runnable, ThreadListener {
             w.setCol(col);
             w.setRoot(rec);
             w.setEndTime(endTime);
-            if (i > (MAX_DEPTH - 2)) {
-                w.setDepth(i - MAX_DEPTH + 2 + 1);
+            if (i > (maxDepth - 2)) {
+                w.setDepth(i - maxDepth + 2 + 1);
                 w.altMoveOrdering(true);
             } else {
                 w.setDepth(i + 2);
@@ -201,7 +187,7 @@ public class ThreadLauncher implements Runnable, ThreadListener {
      * @return the free index, or -1 if there are no free indices
      */
     private int getFreeIndex() {
-        for (int i = 0; i < ((MAX_DEPTH - 1) * PERM_COUNT); i++) {
+        for (int i = 0; i < ((maxDepth - 1) * PERM_COUNT); i++) {
             if (workers[i] == null) {
                 return i;
 
@@ -226,6 +212,24 @@ public class ThreadLauncher implements Runnable, ThreadListener {
         execService.execute(task);
         workers[index] = (Worker) task;
         workersLaunched++;
+    }
+
+    /**
+     * Attempts to stop all active workers immediately.
+     */
+    private void killAllWorkers() {
+        for (int i = 0; i < workers.length; i++) {
+            Worker w = workers[i];
+            if (w == null) {
+                continue;
+
+            }
+            w.doFinish();
+            workers[i] = null;
+        }
+        workersFinished = workersLaunched;
+        searchDone = true;
+        execService.shutdownNow();
     }
 
     /**
@@ -293,9 +297,25 @@ public class ThreadLauncher implements Runnable, ThreadListener {
     private int weightedMoveScore(SearchResult sr) {
         final int BASE_SCORE = 100;
         int weightedScore = BASE_SCORE;
-        weightedScore = (int) Math.round(weightedScore * (1.1 + (sr.depth / 10)));
-        weightedScore += (sr.eval / 50);
+        weightedScore += Math.round((0.1 + (double) sr.depth / 10) * weightedScore);
+        weightedScore += (sr.eval / 40);
+        if ((rec.minorPieceCount > 6) && (rec.board[sr.move.from] & 0b111) == Piece.ROOK.val()) {
+            weightedScore -= 25;
+        }
         return weightedScore;
 
+    }
+
+    private int calculateMaxDepth() {
+        final int BASE_DEPTH = 4;
+        if (rec.minorPieceCount > 6) {
+            return BASE_DEPTH;
+        } else if (rec.minorPieceCount > 4) {
+            return BASE_DEPTH + 1;
+        } else if (rec.minorPieceCount > 2) {
+            return BASE_DEPTH + 2;
+        } else {
+            return BASE_DEPTH + 3;
+        }
     }
 }
