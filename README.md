@@ -23,5 +23,6 @@ for 5 seconds before making a move.
 - Update screenshots
 
 ## Screenshots
+![Screenshot 2025-03-13 021929](https://github.com/user-attachments/assets/44773d99-3ff2-412b-9b03-19f62eafc134)
 ![Screenshot 2025-03-13 021331](https://github.com/user-attachments/assets/f68b0f4c-8775-42da-9ca5-80977b74efe8)
 ![Screenshot 2025-03-13 021620](https://github.com/user-attachments/assets/97d9264a-a084-4c1a-941f-c9af67e3982c)
