@@ -306,6 +306,10 @@ public class ThreadLauncher implements Runnable, ThreadListener {
 
     }
 
+    /**
+     * Calculates a variable search depth based on amount of minor pieces
+     * @return calculated maximum depth
+     */
     private int calculateMaxDepth() {
         final int BASE_DEPTH = 4;
         if (rec.minorPieceCount > 6) {

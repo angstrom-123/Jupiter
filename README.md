@@ -6,21 +6,20 @@ Simple chess engine with accompanying GUI written in Java.
 - Transposition table position lookup
 - Move ordering optimizations
 - Iterative deepening
-- LazySMP multithreading (thread voting)
+- LazySMP multithreading with thread voting
 
 ## Running
 Requires an installation of JDK-21.
 
-By default, engine thinks for ~5 seconds before making a move.
+To run the engine, run "java -jar Jupiter-x.x.x.jar". Add "-b" or "-w" to 
+choose to play as black or white, the default is white.The engine thinks 
+for 5 seconds before making a move. 
 
 ## TODO
+- Update algebraic notation to support castling and en passant
 - Fix windows DPI scaling problems with sprites
 - Optimize: killer moves, pawn position evaluation
 - Update screenshots
-- Remove old files (from before multithreading)
-- Organize file structure
-- Display square that engine moved from graphically
-- Finish documenting code
 
 ## Screenshots
 ![Screenshot 2024-12-20 014551](https://github.com/user-attachments/assets/49d0751e-ca2f-4777-a1f0-f6982b322109)
